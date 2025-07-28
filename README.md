@@ -2,7 +2,7 @@
 
 ### Repository:
 
-📦 [GitHub Repository](https://github.com/mateusz-sta/Playwright_env)
+📦 [GitHub Repository](https://github.com/mateusz-sta/playwright-tests.git)
 
 ### Local recommended tools:
 
@@ -12,11 +12,10 @@
 
 ### Installation and setup:
 
-- clone and enter the repository: `git clone https://github.com/mateusz-sta/Playwright_env.git && cd Playwright_env`
+- clone and enter the repository: `git clone https://github.com/mateusz-sta/playwright-tests.git`
 - (optional) install VSC recommended plugins
 - install dependencies: `npm install`
-- setup Playwright with: `npx playwright install --with-deps chromium`
-- setup Husky with: `npx husky`
+- setup Playwright with: `npm run deps:playwright`
 
 ### Available scripts:
 
@@ -25,7 +24,6 @@
 - `format` – auto-formats the code with Prettier.
 - `format:check` – verifies if the code is properly formatted with Prettier (without modifying files).
 - `lint` – checks code with ESLint, allowing zero warnings.
-- `prepare` – sets up Husky Git hooks.
 - `test:headless` – runs Playwright tests in headless mode.
 - `test:headed` – runs Playwright tests with a visible browser for debugging.
 - `test:ui` – launches Playwright’s interactive UI.
