@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "cSpell.words": [
+    "dotenv",
+    "eslintcache",
+    "jscoverage",
+    "jspm",
+    "nuxt",
+    "pids",
+    "stylelintcache",
+    "Sveltekit",
+    "trivago",
+    "vite",
+    "vitepress",
+    "vuepress",
+    "wscript"
+  ]
+}
