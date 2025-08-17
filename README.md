@@ -35,10 +35,12 @@
 
 ### Tools Used:
 
-- **Dotenv** – manages environment variables by loading them from a `.env` file.
-- **ESLint** – analyzes and enforces coding standards.
-- **@faker-js/faker** – generates large amounts of fake data for testing and development.
-- **Husky** – manages Git hooks to run checks before commits.
-- **Playwright** – provides end-to-end testing with fast and reliable browser automation.
-- **Prettier** – automatically formats code to keep a consistent style.
-- **TypeScript** – ensures static type safety and improves code reliability.
+### Tools Used:
+
+- [Dotenv](https://github.com/motdotla/dotenv) – manages environment variables by loading them from a `.env` file.
+- [ESLint](https://eslint.org/) – analyzes and enforces coding standards.
+- [Faker.js](https://fakerjs.dev/) – generates large amounts of fake data for testing and development.
+- [Husky](https://typicode.github.io/husky/) – manages Git hooks to run checks before commits.
+- [Playwright](https://playwright.dev/) – provides end-to-end testing with fast and reliable browser automation.
+- [Prettier](https://prettier.io/) – automatically formats code to keep a consistent style.
+- [TypeScript](https://www.typescriptlang.org/) – ensures static type safety and improves code reliability.
