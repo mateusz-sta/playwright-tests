@@ -35,8 +35,6 @@
 
 ### Tools Used:
 
-### Tools Used:
-
 - [Dotenv](https://github.com/motdotla/dotenv) – manages environment variables by loading them from a `.env` file.
 - [ESLint](https://eslint.org/) – analyzes and enforces coding standards.
 - [Faker.js](https://fakerjs.dev/) – generates large amounts of fake data for testing and development.
