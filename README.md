@@ -12,12 +12,13 @@
 
 ### Installation and setup:
 
-- clone and enter the repository: `git clone https://github.com/mateusz-sta/playwright-tests.git`
-- (optional) install VSC recommended plugins
-- install dependencies: `npm install`
-- **create environment variables file by copying the example:** `cp .env.example .env`
-- **(important) fill in the `.env` file with your configuration**
-- setup Playwright with: `npm run deps:playwright`
+- clone the repository: `git clone https://github.com/mateusz-sta/playwright-tests.git`
+- enter the repository directory: `cd playwright-tests`
+- (optional) install recommended VS Code extensions
+- install project dependencies: `npm run install:deps`
+- install Playwright browser binaries: `npm run deps:playwright`
+- create environment variables file from the template: `npm run setup:env`
+- (important) fill in the `.env` file with your configuration
 
 ### Available scripts:
 
