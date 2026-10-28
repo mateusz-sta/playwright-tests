@@ -31,8 +31,9 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
   pages available after logging in extend `AuthenticatedPage` (adds `header`).
 - `components/` – parts shared by many pages, e.g. `Header` (logged-in user, logout).
 - `tests/api/` – API tests (`*.api.spec.ts`), run in the `api` project without a browser.
-- `api/` – API clients, one class per resource (e.g. `AuthApi` for `/api/auth`), and `types.ts`
-  with request/response types copied from the [API docs](https://magazyn-test.onrender.com/api/docs).
+- `api/` – API clients, one class per resource (e.g. `AuthApi` for `/api/auth`, `ProductsApi` for `/api/products`),
+  `types.ts` with request/response interfaces from the [API docs](https://magazyn-test.onrender.com/api/docs)
+  and `apiContext.ts` with `createAuthorizedContext()`.
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
 - `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
@@ -45,7 +46,13 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 
 ### API test conventions:
 
-- Tests call API clients (fixtures like `authApi`), never `request.post('/api/...')` directly.
+- Tests call API clients (`AuthApi`, `ProductsApi`, …), never `request.post('/api/...')` directly.
+- Endpoints that need a login get a request context from `createAuthorizedContext()` in `test.beforeAll`
+  (it sends `Authorization: Bearer <token>`); dispose it in `test.afterAll`.
+- Test data comes from `test-data/factories.ts` and is prefixed with `PW-TEST`, so it is easy to spot.
+  Tests that need a platform/product/package use `createCatalog()` / `deleteCatalog()` from `test-data/catalog.ts`.
+- Steps that depend on each other (create → read → update → delete) use `test.describe.configure({ mode: 'serial' })`.
+- Known bugs are covered with `test.fail()` and a description – when the bug is fixed, the test reports it.
 - Client methods return the raw `APIResponse`; tests check the status code and the body shape from the docs.
 - Only read data or create data your test owns and cleans up – the test environment is shared.
   Never call `DELETE /api/demo/data` or `POST /api/demo/seed` from tests.
