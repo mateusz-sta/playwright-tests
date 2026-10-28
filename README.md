@@ -30,6 +30,9 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - `pages/` – Page Objects; one class per page. Pages extend `BasePage` (`open()`, `expectToBeOpened()`),
   pages available after logging in extend `AuthenticatedPage` (adds `header`).
 - `components/` – parts shared by many pages, e.g. `Header` (logged-in user, logout).
+- `tests/api/` – API tests (`*.api.spec.ts`), run in the `api` project without a browser.
+- `api/` – API clients, one class per resource (e.g. `AuthApi` for `/api/auth`), and `types.ts`
+  with request/response types copied from the [API docs](https://magazyn-test.onrender.com/api/docs).
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
 - `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
@@ -39,6 +42,14 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - Tests talk only to page objects – no `page.goto`, raw selectors or `process.env` in test files.
 - Locators and actions live in page objects; checks are `expect*` methods (e.g. `loginPage.expectError()`).
 - When you add a new `expect*` method, add its name to `assertFunctionNames` in `eslint.config.mjs`.
+
+### API test conventions:
+
+- Tests call API clients (fixtures like `authApi`), never `request.post('/api/...')` directly.
+- Client methods return the raw `APIResponse`; tests check the status code and the body shape from the docs.
+- Only read data or create data your test owns and cleans up – the test environment is shared.
+  Never call `DELETE /api/demo/data` or `POST /api/demo/seed` from tests.
+- Don't send many wrong passwords for the test user – the API blocks it after too many failed attempts (429).
 
 ### CI (GitHub Actions):
 
@@ -56,6 +67,7 @@ Tests run on every push and pull request to `main`. Add these repository secrets
 - `test:headless` – runs Playwright tests in headless mode.
 - `test:headed` – runs Playwright tests with a visible browser for debugging.
 - `test:ui` – launches Playwright’s interactive UI.
+- `test:api` – runs only the API tests.
 - `test:report` – opens the generated Playwright HTML report.
 - `tsc:check` – runs TypeScript compiler (strict mode, configured in `tsconfig.json`) to check for type errors without emitting files.
 

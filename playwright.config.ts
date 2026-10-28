@@ -35,11 +35,17 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      testIgnore: '**/api/**',
       use: {
         ...devices['Desktop Chrome'],
         storageState: USER_STORAGE_STATE,
       },
       dependencies: ['setup'],
+    },
+    {
+      // API tests: no browser and no saved session, each test gets a token itself.
+      name: 'api',
+      testDir: './tests/api',
     },
   ],
 });

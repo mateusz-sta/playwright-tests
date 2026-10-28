@@ -17,6 +17,7 @@
     "test:headless": "npx playwright test",
     "test:headed": "npx playwright test --headed",
     "test:ui": "npx playwright test --ui",
+    "test:api": "npx playwright test --project=api",
     "test:report": "npx playwright show-report",
     "tsc:check": "npx tsc --noEmit --pretty"
   },
