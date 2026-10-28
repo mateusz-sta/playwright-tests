@@ -27,9 +27,18 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - `tests/` – test files (`*.spec.ts`), grouped by feature.
 - `tests/auth.setup.ts` – logs in once before the tests and saves the session to `playwright/.auth/user.json`;
   all tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
-- `pages/` – Page Objects; one class per page, extending `BasePage`.
+- `pages/` – Page Objects; one class per page. Pages extend `BasePage` (`open()`, `expectToBeOpened()`),
+  pages available after logging in extend `AuthenticatedPage` (adds `header`).
+- `components/` – parts shared by many pages, e.g. `Header` (logged-in user, logout).
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
+- `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
+
+### Page Object Model conventions:
+
+- Tests talk only to page objects – no `page.goto`, raw selectors or `process.env` in test files.
+- Locators and actions live in page objects; checks are `expect*` methods (e.g. `loginPage.expectError()`).
+- When you add a new `expect*` method, add its name to `assertFunctionNames` in `eslint.config.mjs`.
 
 ### CI (GitHub Actions):
 

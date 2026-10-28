@@ -1,8 +1,7 @@
-import { expect, test } from '../fixtures/fixtures';
-import { requireEnv } from '../utils/helpers';
+import { test } from '../fixtures/fixtures';
+import { getTestUser } from '../test-data/users';
 
-const username = requireEnv('TEST_USER_USERNAME');
-const password = requireEnv('TEST_USER_PASSWORD');
+const user = getTestUser();
 
 // These tests check logging in, so they start without the saved session.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -15,43 +14,37 @@ test.describe('Login', () => {
   test('user logs in with valid credentials', async ({
     loginPage,
     productsPage,
-    page,
   }) => {
-    await loginPage.login(username, password);
+    await loginPage.loginAs(user);
 
-    await expect(page).toHaveURL(/\/products$/);
-    await expect(productsPage.heading).toBeVisible();
-    await expect(productsPage.accountLink(username)).toBeVisible();
+    await productsPage.expectToBeOpened();
+    await productsPage.header.expectLoggedInAs(user.username);
   });
 
-  test('user sees an error for a wrong password', async ({
-    loginPage,
-    page,
-  }) => {
-    await loginPage.login(username, 'wrong-password');
+  test('user sees an error for a wrong password', async ({ loginPage }) => {
+    await loginPage.login(user.username, 'wrong-password');
 
-    await expect(loginPage.errorAlert).toHaveText('Nieprawidłowe hasło');
-    await expect(page).toHaveURL(/\/login/);
+    await loginPage.expectError('Nieprawidłowe hasło');
+    await loginPage.expectToBeOpened();
   });
 
   test('user logs out', async ({ loginPage, productsPage }) => {
-    await loginPage.login(username, password);
-    await expect(productsPage.heading).toBeVisible();
+    await loginPage.loginAs(user);
+    await productsPage.expectToBeOpened();
 
-    await productsPage.logoutButton.click();
+    await productsPage.header.logout();
 
-    await expect(loginPage.heading).toBeVisible();
+    await loginPage.expectToBeOpened();
   });
 });
 
 test.describe('Access control', () => {
   test('guest is redirected to login from a protected page', async ({
+    createUserPage,
     loginPage,
-    page,
   }) => {
-    await page.goto('/auth/create-user');
+    await createUserPage.open();
 
-    await expect(page).toHaveURL(/\/login\?returnUrl=%2Fauth%2Fcreate-user/);
-    await expect(loginPage.heading).toBeVisible();
+    await loginPage.expectRedirectedFrom(createUserPage.path);
   });
 });
