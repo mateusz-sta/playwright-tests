@@ -1,3 +1,4 @@
+import { USER_STORAGE_STATE } from './utils/constants';
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
@@ -29,8 +30,16 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: USER_STORAGE_STATE,
+      },
+      dependencies: ['setup'],
     },
   ],
 });

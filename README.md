@@ -25,6 +25,8 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 ### Project structure:
 
 - `tests/` – test files (`*.spec.ts`), grouped by feature.
+- `tests/auth.setup.ts` – logs in once before the tests and saves the session to `playwright/.auth/user.json`;
+  all tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
 - `pages/` – Page Objects; one class per page, extending `BasePage`.
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.

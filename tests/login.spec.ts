@@ -4,6 +4,9 @@ import { requireEnv } from '../utils/helpers';
 const username = requireEnv('TEST_USER_USERNAME');
 const password = requireEnv('TEST_USER_PASSWORD');
 
+// These tests check logging in, so they start without the saved session.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login', () => {
   test.beforeEach(async ({ loginPage }) => {
     await loginPage.open();
