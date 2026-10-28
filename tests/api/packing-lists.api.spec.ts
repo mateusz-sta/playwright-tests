@@ -29,6 +29,7 @@ async function reservationFor(
   const body: ProductReservation[] = await (
     await packingLists.reservations()
   ).json();
+  expect(body).toMatchSchema('ProductReservationDto[]');
   return body.find((r) => r.productId === productId);
 }
 
@@ -61,6 +62,7 @@ test.describe('API: packing lists', () => {
 
     expect(response.status()).toBe(201);
     list = await response.json();
+    expect(list).toMatchSchema('PackingListDto');
     expect(list).toMatchObject({
       platformId: catalog.platform.id,
       name,
@@ -96,6 +98,7 @@ test.describe('API: packing lists', () => {
 
     expect(response.status()).toBe(200);
     const body: PackingList = await response.json();
+    expect(body).toMatchSchema('PackingListDto');
     expect(body.doneCount).toBe(1);
     expect(body.items[0].status).toBe('DONE');
     // Done items are no longer reserved.
@@ -109,6 +112,7 @@ test.describe('API: packing lists', () => {
     });
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('PackingListDto');
     await expect(response.json()).resolves.toHaveProperty('doneCount', 0);
   });
 
@@ -119,6 +123,7 @@ test.describe('API: packing lists', () => {
     });
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('PackingListDto');
     await expect(response.json()).resolves.toMatchObject({
       note: 'Updated by API tests',
       totalPackages: 5,
@@ -133,6 +138,7 @@ test.describe('API: packing lists', () => {
 
     expect(response.status()).toBe(200);
     const body: PackingListSummary[] = await response.json();
+    expect(body).toMatchSchema('PackingListSummaryDto[]');
     expect(body.map((l) => l.id)).toEqual([list.id]);
   });
 
@@ -140,6 +146,7 @@ test.describe('API: packing lists', () => {
     const response = await packingLists.get(list.id);
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('PackingListDto');
     await expect(response.json()).resolves.toHaveProperty('id', list.id);
   });
 

@@ -30,6 +30,21 @@ export default [
     },
   },
   {
+    // Rules that need type information. A missing `await` on a Playwright call
+    // makes tests pass falsely or flake – recommended by the Playwright docs.
+    files: ['**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+    },
+  },
+  {
     // Command-line scripts (plain JS) report progress to the console.
     files: ['scripts/**/*.mjs'],
     rules: {

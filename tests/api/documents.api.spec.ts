@@ -72,6 +72,7 @@ test.describe('API: documents (stock receipts and issues)', () => {
 
       expect(response.status()).toBe(201);
       receipt = await response.json();
+      expect(receipt).toMatchSchema('DocumentDto');
       createdDocumentIds.push(receipt.id);
       expect(receipt).toMatchObject({
         type: 'IN',
@@ -103,6 +104,7 @@ test.describe('API: documents (stock receipts and issues)', () => {
 
       expect(response.status()).toBe(201);
       issue = await response.json();
+      expect(issue).toMatchSchema('DocumentDto');
       createdDocumentIds.push(issue.id);
       expect(issue).toMatchObject({
         type: 'OUT',
@@ -118,6 +120,7 @@ test.describe('API: documents (stock receipts and issues)', () => {
 
       expect(response.status()).toBe(200);
       const body: StockMovement[] = await response.json();
+      expect(body).toMatchSchema('StockMovementDto[]');
       expect(body).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -142,6 +145,7 @@ test.describe('API: documents (stock receipts and issues)', () => {
 
       expect(response.status()).toBe(200);
       const body: DocumentSummary[] = await response.json();
+      expect(body).toMatchSchema('DocumentSummaryDto[]');
       expect(body.map((d) => d.id)).toEqual([issue.id]);
     });
 
@@ -197,6 +201,7 @@ test.describe('API: documents (stock receipts and issues)', () => {
 
       expect(response.status()).toBe(201);
       const body: Document = await response.json();
+      expect(body).toMatchSchema('DocumentDto');
       createdDocumentIds.push(body.id);
       // 10 000 packages × 100 pcs
       expect(body.totalQuantity).toBe(1_000_000);

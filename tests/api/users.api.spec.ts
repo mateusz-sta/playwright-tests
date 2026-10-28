@@ -36,6 +36,7 @@ test.describe('API: users', () => {
 
     expect(response.status()).toBe(200);
     const body: CurrentUser[] = await response.json();
+    expect(body).toMatchSchema('CurrentUserDto[]');
     expect(body).toContainEqual({
       id: expect.any(Number),
       username: testUser.username.toLowerCase(),
@@ -46,6 +47,7 @@ test.describe('API: users', () => {
     const response = await users.create(newUser);
 
     expect(response.status()).toBe(201);
+    expect<unknown>(await response.json()).toMatchSchema('CurrentUserDto');
     await expect(response.json()).resolves.toEqual({
       id: expect.any(Number),
       username: newUser.username,
