@@ -13,7 +13,6 @@ export default [
       'test-results/**',
     ],
   },
-  { files: ['**/*.ts'] },
   { languageOptions: { globals: globals.node } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
@@ -27,8 +26,12 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'error',
     },
   },
-  eslintPluginPlaywright.configs['flat/recommended'],
   {
+    ...eslintPluginPlaywright.configs['flat/recommended'],
+    files: ['tests/**/*.ts'],
+  },
+  {
+    files: ['tests/**/*.ts'],
     rules: {
       'playwright/no-nested-step': 'off',
     },
