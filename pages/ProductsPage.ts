@@ -12,7 +12,11 @@ export class ProductsPage extends BasePage {
     this.logoutButton = page.getByRole('button', { name: 'Wyloguj' });
   }
 
+  // The app stores usernames in lowercase, regardless of how they were typed.
   accountLink(username: string): Locator {
-    return this.page.getByRole('link', { name: username, exact: true });
+    return this.page.getByRole('link', {
+      name: username.toLowerCase(),
+      exact: true,
+    });
   }
 }
