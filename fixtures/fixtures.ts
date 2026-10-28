@@ -1,3 +1,4 @@
+import { AuthApi } from '../api/AuthApi';
 import { CreateUserPage } from '../pages/CreateUserPage';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
@@ -11,7 +12,11 @@ type Pages = {
   createUserPage: CreateUserPage;
 };
 
-export const test = base.extend<Pages>({
+type ApiClients = {
+  authApi: AuthApi;
+};
+
+export const test = base.extend<Pages & ApiClients>({
   homePage: async ({ page }, use) => {
     await use(new HomePage(page));
   },
@@ -23,6 +28,9 @@ export const test = base.extend<Pages>({
   },
   createUserPage: async ({ page }, use) => {
     await use(new CreateUserPage(page));
+  },
+  authApi: async ({ request }, use) => {
+    await use(new AuthApi(request));
   },
 });
 
