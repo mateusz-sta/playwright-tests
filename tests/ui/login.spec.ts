@@ -1,5 +1,5 @@
-import { test } from '../fixtures/fixtures';
-import { getTestUser } from '../test-data/users';
+import { test } from '../../fixtures/fixtures';
+import { getTestUser } from '../../test-data/users';
 
 const user = getTestUser();
 

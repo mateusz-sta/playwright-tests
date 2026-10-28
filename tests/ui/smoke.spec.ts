@@ -1,4 +1,4 @@
-import { test } from '../fixtures/fixtures';
+import { test } from '../../fixtures/fixtures';
 
 test.describe('Smoke', () => {
   test('home page loads', async ({ homePage }) => {

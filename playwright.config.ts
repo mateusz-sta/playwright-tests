@@ -35,7 +35,7 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: '**/api/**',
+      testDir: './tests/ui',
       use: {
         ...devices['Desktop Chrome'],
         storageState: USER_STORAGE_STATE,
