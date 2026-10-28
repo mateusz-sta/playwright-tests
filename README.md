@@ -58,6 +58,18 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
   Never call `DELETE /api/demo/data` or `POST /api/demo/seed` from tests.
 - Don't send many wrong passwords for the test user – the API blocks it after too many failed attempts (429).
 
+### Test results dashboard (Allure):
+
+📊 **https://mateusz-sta.github.io/playwright-tests/** – updated after every run on `main`
+(push, merge or manual run: Actions → Playwright Tests → Run workflow).
+
+- **Awesome** – all tests grouped by suite, with steps, errors and screenshots.
+- **Dashboard** – charts: current status, trends over previous runs, flaky tests.
+- The report is public, so CI removes Playwright traces and videos from it
+  (`scripts/strip-allure-attachments.mjs`) – a trace records what was typed, including the password.
+  Full traces are in the `playwright-report` artifact of the run.
+- Locally: run tests, then `npm run allure:generate` and `npm run allure:open`.
+
 ### CI (GitHub Actions):
 
 Tests run on every push and pull request to `main`. Add these repository secrets

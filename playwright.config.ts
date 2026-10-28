@@ -1,10 +1,19 @@
 import { USER_STORAGE_STATE } from './utils/constants';
-import { defineConfig, devices } from '@playwright/test';
+import { ReporterDescription, defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
 dotenv.config({ quiet: true });
 
 const isCI = !!process.env.CI;
+
+// Results for the Allure dashboard (npm run allure:generate / allure:open).
+const allureReporter: ReporterDescription = [
+  'allure-playwright',
+  {
+    resultsDir: 'allure-results',
+    environmentInfo: { BASE_URL: process.env.BASE_URL ?? '' },
+  },
+];
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -19,7 +28,9 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   workers: isCI ? 1 : undefined,
-  reporter: isCI ? [['github'], ['html', { open: 'never' }]] : 'html',
+  reporter: isCI
+    ? [['github'], ['html', { open: 'never' }], allureReporter]
+    : [['html'], allureReporter],
   use: {
     baseURL: process.env.BASE_URL,
     actionTimeout: 10_000,

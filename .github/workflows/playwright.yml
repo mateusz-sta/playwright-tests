@@ -4,6 +4,9 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test:
     timeout-minutes: 60
@@ -35,3 +38,58 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
+      # The Allure report is public – traces record what was typed, including the password.
+      - name: Remove traces and videos from Allure results
+        if: ${{ !cancelled() }}
+        run: node scripts/strip-allure-attachments.mjs allure-results
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 7
+
+  # Publishes the Allure dashboard to GitHub Pages after every run on main (also when tests fail).
+  report:
+    needs: test
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results
+      - name: Download history of previous runs
+        run: |
+          mkdir -p allure-history
+          url="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/history.jsonl"
+          if curl -sfL "$url" -o history.tmp; then
+            mv history.tmp allure-history/history.jsonl
+          else
+            echo "No previous history found – this is the first report."
+          fi
+      - name: Generate Allure report
+        run: npx allure generate allure-results
+      - name: Publish history together with the report
+        run: cp allure-history/history.jsonl allure-report/history.jsonl
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report
+      - id: deploy
+        uses: actions/deploy-pages@v4
