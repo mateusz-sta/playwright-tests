@@ -19,8 +19,8 @@ jobs:
       TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
       TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
           cache: npm
@@ -47,7 +47,7 @@ jobs:
           echo "::warning::Application did not respond – tests may fail."
       - name: Run Playwright tests
         run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
@@ -57,7 +57,7 @@ jobs:
       - name: Remove traces and videos from Allure results
         if: ${{ !cancelled() }}
         run: node scripts/strip-allure-attachments.mjs allure-results
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: allure-results
@@ -79,14 +79,14 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: allure-results
           path: allure-results
@@ -103,8 +103,8 @@ jobs:
         run: npx allure generate allure-results
       - name: Publish history together with the report
         run: cp allure-history/history.jsonl allure-report/history.jsonl
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: allure-report
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

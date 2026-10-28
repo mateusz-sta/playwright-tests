@@ -8,7 +8,7 @@
 
 - VSC
 - Git
-- Node.js (version 18 or newer)
+- Node.js (version 20 or newer)
 
 ### Installation and setup:
 
