@@ -87,6 +87,7 @@ test.describe('API: shipments', () => {
 
     expect(response.status()).toBe(201);
     shipment = await response.json();
+    expect(shipment).toMatchSchema('ShipmentDto');
     expect(shipment).toMatchObject({
       platformId: catalog.platform.id,
       name,
@@ -118,6 +119,7 @@ test.describe('API: shipments', () => {
     const response = await documents.get(shipment.documentId as number);
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('DocumentDto');
     await expect(response.json()).resolves.toMatchObject({
       type: 'OUT',
       shipmentId: shipment.id,
@@ -130,6 +132,7 @@ test.describe('API: shipments', () => {
 
     expect(response.status()).toBe(200);
     const body: ShipmentSummary[] = await response.json();
+    expect(body).toMatchSchema('ShipmentSummaryDto[]');
     expect(body.map((s) => s.id)).toEqual([shipment.id]);
   });
 
@@ -149,6 +152,7 @@ test.describe('API: shipments', () => {
     });
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('ShipmentDto');
     await expect(response.json()).resolves.toMatchObject({
       boxCount: 2,
       totalPackages: 3,

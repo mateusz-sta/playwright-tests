@@ -45,6 +45,7 @@ test.describe('API: packages', () => {
 
     expect(response.status()).toBe(201);
     pkg = await response.json();
+    expect(pkg).toMatchSchema('PackageDto');
     expect(pkg).toMatchObject({
       name: input.name,
       sku: input.sku,
@@ -85,6 +86,7 @@ test.describe('API: packages', () => {
 
     expect(response.status()).toBe(200);
     const body: Package[] = await response.json();
+    expect(body).toMatchSchema('PackageDto[]');
     expect(body.map((p) => p.id)).toEqual([pkg.id]);
   });
 
@@ -99,6 +101,7 @@ test.describe('API: packages', () => {
     const response = await packages.update(pkg.id, { quantity: 200 });
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('PackageDto');
     await expect(response.json()).resolves.toMatchObject({
       quantity: 200,
       netPrice: 8.5,
@@ -121,6 +124,7 @@ test.describe('API: packages', () => {
 
     expect(response.status()).toBe(200);
     const body: DeletePackagesResult = await response.json();
+    expect(body).toMatchSchema('DeletePackagesResultDto');
     expect(body.deleted).toEqual([pkg.id]);
     expect(body.failed).toEqual([expect.objectContaining({ id: 999_999_999 })]);
     expect((await packages.get(pkg.id)).status()).toBe(404);

@@ -20,6 +20,7 @@
     "test:e2e": "npx playwright test --project=chromium",
     "test:api": "npx playwright test --project=api",
     "test:report": "npx playwright show-report",
+    "api:update-spec": "node scripts/update-openapi.mjs",
     "allure:generate": "npx allure generate allure-results",
     "allure:open": "npx allure open allure-report",
     "tsc:check": "npx tsc --noEmit --pretty"
@@ -33,6 +34,8 @@
     "@playwright/test": "^1.64.1",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "~24.19.2",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "allure": "3.20.1",
     "allure-playwright": "^3.13.0",
     "dotenv": "~17.4.2",

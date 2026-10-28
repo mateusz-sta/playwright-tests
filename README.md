@@ -53,6 +53,11 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
   Tests that need a platform/product/package use `createCatalog()` / `deleteCatalog()` from `test-data/catalog.ts`.
 - Steps that depend on each other (create → read → update → delete) use `test.describe.configure({ mode: 'serial' })`.
 - Known bugs are covered with `test.fail()` and a description – when the bug is fixed, the test reports it.
+- Check every successful response against the API docs: `expect(body).toMatchSchema('ProductDto')`
+  (`'ProductDto[]'` for lists). Schemas come from `api/openapi.json`, a saved copy of the docs.
+  For `await response.json()` use `expect<unknown>(...)` – Playwright hides custom matchers on `any`.
+- `tests/api/contract.api.spec.ts` fails when the live docs differ from `api/openapi.json`:
+  run `npm run api:update-spec`, review the diff and adjust the tests.
 - Client methods return the raw `APIResponse`; tests check the status code and the body shape from the docs.
 - Only read data or create data your test owns and cleans up – the test environment is shared.
   Never call `DELETE /api/demo/data` or `POST /api/demo/seed` from tests.
@@ -88,6 +93,7 @@ Tests run on every push and pull request to `main`. Add these repository secrets
 - `test:ui` – launches Playwright’s interactive UI.
 - `test:e2e` – runs only the browser tests (with the login `setup` step).
 - `test:api` – runs only the API tests.
+- `api:update-spec` – downloads the current API docs into `api/openapi.json`.
 - `test:report` – opens the generated Playwright HTML report.
 - `tsc:check` – runs TypeScript compiler (strict mode, configured in `tsconfig.json`) to check for type errors without emitting files.
 

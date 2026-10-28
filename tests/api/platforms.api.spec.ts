@@ -34,6 +34,7 @@ test.describe('API: platforms', () => {
 
     expect(response.status()).toBe(201);
     platform = await response.json();
+    expect(platform).toMatchSchema('PlatformDto');
     expect(platform).toEqual({
       id: expect.any(Number),
       name: input.name,
@@ -57,6 +58,7 @@ test.describe('API: platforms', () => {
 
     expect(response.status()).toBe(200);
     const body: Platform[] = await response.json();
+    expect(body).toMatchSchema('PlatformDto[]');
     expect(body).toContainEqual(platform);
   });
 
@@ -70,6 +72,7 @@ test.describe('API: platforms', () => {
     const response = await platforms.update(platform.id, { name: renamed });
 
     expect(response.status()).toBe(200);
+    expect<unknown>(await response.json()).toMatchSchema('PlatformDto');
     await expect(response.json()).resolves.toHaveProperty('name', renamed);
   });
 

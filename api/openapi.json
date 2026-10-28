@@ -1,0 +1,3891 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Użytkownik nie istnieje albo nieprawidłowe hasło"
+          },
+          "429": {
+            "description": "Zbyt wiele nieudanych prób"
+          }
+        },
+        "summary": "Logowanie – zwraca token JWT",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "refreshToken",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token wygasł – trzeba zalogować się ponownie"
+          }
+        },
+        "summary": "Nowy token dla zalogowanego – przedłuża sesję (wylogowanie po SESSION_IDLE_MINUTES bezczynności)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          }
+        },
+        "summary": "Zalogowany użytkownik",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Nieprawidłowe obecne hasło albo za słabe nowe"
+          },
+          "429": {
+            "description": "Zbyt wiele nieudanych prób"
+          }
+        },
+        "summary": "Zmiana hasła zalogowanego użytkownika",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "listUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrentUserDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista użytkowników",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nieprawidłowy login albo za krótkie hasło"
+          },
+          "409": {
+            "description": "Login zajęty"
+          }
+        },
+        "summary": "Nowy użytkownik",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{username}": {
+      "delete": {
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "username",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "jan",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Próba usunięcia siebie albo ostatniego użytkownika"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usunięcie użytkownika (nie własnego i nie ostatniego)",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/products": {
+      "get": {
+        "operationId": "listProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista produktów ze stanami",
+        "tags": [
+          "products"
+        ]
+      },
+      "post": {
+        "operationId": "createProduct",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Symbol jest już zajęty"
+          }
+        },
+        "summary": "Nowy produkt",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "operationId": "getProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Szczegóły produktu",
+        "tags": [
+          "products"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "Symbol jest już zajęty"
+          }
+        },
+        "summary": "Edycja produktu",
+        "tags": [
+          "products"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "Produkt występuje na dokumentach"
+          }
+        },
+        "summary": "Usunięcie produktu bez historii ruchów",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/bulk": {
+      "post": {
+        "operationId": "createProducts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateProductDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane – komunikat wskazuje element tablicy"
+          },
+          "409": {
+            "description": "Symbol zajęty"
+          }
+        },
+        "summary": "Wiele produktów naraz (tablica) – zapisują się wszystkie albo żaden",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/delete": {
+      "post": {
+        "operationId": "deleteProducts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProductsResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pusta albo błędna lista id"
+          }
+        },
+        "summary": "Zbiorcze usuwanie – usuwa produkty bez ruchów i pakietów, resztę zwraca z powodem",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/{productId}/movements": {
+      "get": {
+        "operationId": "listMovements",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockMovementDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Historia przyjęć i wydań produktu",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "operationId": "listDocuments",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MovementType"
+            }
+          },
+          {
+            "name": "platformId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista dokumentów przyjęć/wydań",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "createDocument",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          }
+        },
+        "summary": "Nowe przyjęcie produktów albo wydanie pakietów jednej platformy",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{id}": {
+      "get": {
+        "operationId": "getDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Dokument z pozycjami",
+        "tags": [
+          "documents"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usunięcie dokumentu i cofnięcie jego ruchów",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/platforms": {
+      "get": {
+        "operationId": "listPlatforms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlatformDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Platformy sprzedażowe",
+        "tags": [
+          "platforms"
+        ]
+      },
+      "post": {
+        "operationId": "createPlatform",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlatformDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nazwa zajęta"
+          }
+        },
+        "summary": "Nowa platforma",
+        "tags": [
+          "platforms"
+        ]
+      }
+    },
+    "/api/platforms/{id}": {
+      "get": {
+        "operationId": "getPlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Szczegóły platformy",
+        "tags": [
+          "platforms"
+        ]
+      },
+      "patch": {
+        "operationId": "updatePlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlatformDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "Nazwa zajęta"
+          }
+        },
+        "summary": "Zmiana nazwy platformy",
+        "tags": [
+          "platforms"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "Platforma ma pakiety albo wydania"
+          }
+        },
+        "summary": "Usunięcie platformy bez pakietów i wydań",
+        "tags": [
+          "platforms"
+        ]
+      }
+    },
+    "/api/packages": {
+      "get": {
+        "operationId": "listPackages",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "platformId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PackageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista pakietów (opcjonalnie jednej platformy lub jednego produktu)",
+        "tags": [
+          "packages"
+        ]
+      },
+      "post": {
+        "operationId": "createPackage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePackageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": ""
+          },
+          "409": {
+            "description": "SKU zajęte"
+          }
+        },
+        "summary": "Nowy pakiet",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/{id}": {
+      "get": {
+        "operationId": "getPackage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Szczegóły pakietu",
+        "tags": [
+          "packages"
+        ]
+      },
+      "patch": {
+        "operationId": "updatePackage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePackageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "SKU zajęte"
+          }
+        },
+        "summary": "Edycja pakietu",
+        "tags": [
+          "packages"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePackage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": "Pakiet ma dostępne sztuki albo występuje na wydaniach"
+          }
+        },
+        "summary": "Usunięcie pakietu z dostępnością 0, który nie występuje na wydaniach",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/bulk": {
+      "post": {
+        "operationId": "createPackages",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreatePackageDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PackageDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane – komunikat wskazuje element tablicy"
+          },
+          "409": {
+            "description": "SKU zajęte"
+          }
+        },
+        "summary": "Wiele pakietów naraz (tablica) – zapisują się wszystkie albo żaden",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/delete": {
+      "post": {
+        "operationId": "deletePackages",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePackagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePackagesResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pusta albo błędna lista id"
+          }
+        },
+        "summary": "Zbiorcze usuwanie – usuwa pakiety z dostępnością 0 i bez wydań, resztę zwraca z powodem",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packing-lists": {
+      "get": {
+        "operationId": "listPackingLists",
+        "parameters": [
+          {
+            "name": "platformId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PackingListSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listy pakowania (najnowsze na górze)",
+        "tags": [
+          "packing-lists"
+        ]
+      },
+      "post": {
+        "operationId": "createPackingList",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePackingListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          }
+        },
+        "summary": "Nowa lista pakowania jednej platformy (nie zmienia stanów)",
+        "tags": [
+          "packing-lists"
+        ]
+      }
+    },
+    "/api/packing-lists/reservations": {
+      "get": {
+        "operationId": "listPackingReservations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductReservationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sztuki produktów potrzebne na pozycje „w trakcie” ze wszystkich list pakowania",
+        "tags": [
+          "packing-lists"
+        ]
+      }
+    },
+    "/api/packing-lists/{id}": {
+      "get": {
+        "operationId": "getPackingList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingListDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Lista pakowania z pozycjami i stanami produktów",
+        "tags": [
+          "packing-lists"
+        ]
+      },
+      "put": {
+        "operationId": "updatePackingList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePackingListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zmiana listy; podane pozycje zastępują dotychczasowe",
+        "tags": [
+          "packing-lists"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePackingList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usuwa listę pakowania",
+        "tags": [
+          "packing-lists"
+        ]
+      }
+    },
+    "/api/packing-lists/{id}/items": {
+      "patch": {
+        "operationId": "updatePackingListItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePackingItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingListDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Status wielu pozycji naraz: w trakcie / gotowe",
+        "tags": [
+          "packing-lists"
+        ]
+      }
+    },
+    "/api/packing-lists/{id}/items/{itemId}": {
+      "patch": {
+        "operationId": "updatePackingListItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePackingItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingListDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Status pozycji: w trakcie / gotowe",
+        "tags": [
+          "packing-lists"
+        ]
+      }
+    },
+    "/api/shipments": {
+      "get": {
+        "operationId": "listShipments",
+        "parameters": [
+          {
+            "name": "platformId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShipmentSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Wysyłki (najnowsze na górze)",
+        "tags": [
+          "shipments"
+        ]
+      },
+      "post": {
+        "operationId": "createShipment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShipmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          }
+        },
+        "summary": "Nowa wysyłka – od razu zdejmuje pakiety ze stanu (wydanie)",
+        "tags": [
+          "shipments"
+        ]
+      }
+    },
+    "/api/shipments/{id}": {
+      "get": {
+        "operationId": "getShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Wysyłka z pudełkami i ich zawartością",
+        "tags": [
+          "shipments"
+        ]
+      },
+      "put": {
+        "operationId": "updateShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShipmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zmiana wysyłki; podane pudełka zastępują dotychczasowe, wydanie się przelicza",
+        "tags": [
+          "shipments"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usuwa wysyłkę i jej wydanie – stan wraca",
+        "tags": [
+          "shipments"
+        ]
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "operationId": "listOrders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Zamówienia towaru (najnowsze na górze)",
+        "tags": [
+          "orders"
+        ]
+      },
+      "post": {
+        "operationId": "createOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          }
+        },
+        "summary": "Nowe zamówienie towaru (nie zmienia stanów)",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "operationId": "getOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zamówienie z pozycjami",
+        "tags": [
+          "orders"
+        ]
+      },
+      "put": {
+        "operationId": "updateOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zmiana zamówienia; podane pozycje zastępują dotychczasowe",
+        "tags": [
+          "orders"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usuwa zamówienie",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/api/demo/seed": {
+      "post": {
+        "operationId": "seedDemoData",
+        "parameters": [
+          {
+            "name": "count",
+            "required": false,
+            "in": "query",
+            "description": "Liczba produktów (1–500, domyślnie 50)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeedResultDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Dane testowe: produkty na wzór KN1 z pakietami i stanem początkowym",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
+    "/api/demo/data": {
+      "delete": {
+        "operationId": "clearAllData",
+        "parameters": [
+          {
+            "name": "confirm",
+            "required": true,
+            "in": "query",
+            "description": "Wpisz USUN, żeby potwierdzić",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Brak potwierdzenia"
+          }
+        },
+        "summary": "Usuwa WSZYSTKIE produkty, pakiety, dokumenty i ruchy (użytkownicy zostają)",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
+    "/api/me/settings": {
+      "get": {
+        "operationId": "getMySettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "summary": "Wszystkie moje ustawienia { klucz: wartość }",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/me/settings/{key}": {
+      "put": {
+        "operationId": "saveMySetting",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "table.packages",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Nieprawidłowy klucz albo za duża wartość"
+          }
+        },
+        "summary": "Zapis ustawienia (np. table.packages)",
+        "tags": [
+          "settings"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteMySetting",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "table.packages",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Usunięcie ustawienia (powrót do domyślnych)",
+        "tags": [
+          "settings"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Magazyn API",
+    "description": "Produkty i stany magazynowe",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Token JWT – wysyłaj w nagłówku Authorization: Bearer <token>"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accessToken",
+          "expiresAt",
+          "username"
+        ]
+      },
+      "CurrentUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "format": "password"
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "jan",
+            "description": "3–50 znaków: małe litery, cyfry, kropka, minus, podkreślenie"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "ProductDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Stawka VAT w %"
+          },
+          "netPricePer1000": {
+            "type": "number",
+            "description": "Cena za 1000 szt. netto (z faktury)"
+          },
+          "grossPricePer1000": {
+            "type": "number",
+            "description": "Cena za 1000 szt. brutto (wyliczana)"
+          },
+          "netUnitPrice": {
+            "type": "number",
+            "description": "Cena jednostkowa netto (wyliczana)"
+          },
+          "grossUnitPrice": {
+            "type": "number",
+            "description": "Cena jednostkowa brutto (wyliczana)"
+          },
+          "stock": {
+            "type": "number",
+            "description": "Aktualny stan magazynowy (szt.)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "symbol",
+          "vatRate",
+          "netPricePer1000",
+          "grossPricePer1000",
+          "netUnitPrice",
+          "grossUnitPrice",
+          "stock",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Śruba M6x20 ocynk",
+            "maxLength": 200
+          },
+          "symbol": {
+            "type": "string",
+            "example": "SR-M6-20",
+            "maxLength": 50
+          },
+          "netPricePer1000": {
+            "type": "number",
+            "description": "Cena netto za 1000 szt. z faktury (PLN)",
+            "example": 42.5,
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Stawka VAT w %: 23, 8, 5 lub 0",
+            "example": 23
+          }
+        },
+        "required": [
+          "name",
+          "symbol",
+          "netPricePer1000",
+          "vatRate"
+        ]
+      },
+      "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Śruba M6x20 ocynk",
+            "maxLength": 200
+          },
+          "symbol": {
+            "type": "string",
+            "example": "SR-M6-20",
+            "maxLength": 50
+          },
+          "netPricePer1000": {
+            "type": "number",
+            "description": "Cena netto za 1000 szt. z faktury (PLN)",
+            "example": 42.5,
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Stawka VAT w %: 23, 8, 5 lub 0",
+            "example": 23
+          }
+        }
+      },
+      "DeleteProductsDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "DeleteFailureDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Symbol produktu (albo id, gdy produkt nie istnieje)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Dlaczego nie usunięto"
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "reason"
+        ]
+      },
+      "DeleteProductsResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "description": "Usunięte produkty",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "failed": {
+            "description": "Pominięte – z historią ruchów albo z pakietami",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeleteFailureDto"
+            }
+          }
+        },
+        "required": [
+          "deleted",
+          "failed"
+        ]
+      },
+      "MovementType": {
+        "type": "string",
+        "enum": [
+          "IN",
+          "OUT"
+        ]
+      },
+      "StockMovementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "documentId": {
+            "type": "number"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MovementType"
+              }
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu"
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pakiet, jeśli wydano pakiety"
+          },
+          "packageSku": {
+            "type": "string"
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Liczba wydanych pakietów"
+          },
+          "documentDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Data dokumentu"
+          },
+          "documentReference": {
+            "type": "string",
+            "description": "Numer faktury / karty przewozowej – opcjonalny"
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "Dostawca / odbiorca"
+          },
+          "platformName": {
+            "type": "string",
+            "description": "Platforma wydania"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "documentId",
+          "type",
+          "quantity",
+          "documentDate",
+          "createdAt"
+        ]
+      },
+      "DocumentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MovementType"
+              }
+            ]
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma wydania"
+          },
+          "platformName": {
+            "type": "string",
+            "description": "Nazwa platformy wydania"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Numer faktury / karty przewozowej – opcjonalny"
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "Dostawca / odbiorca"
+          },
+          "note": {
+            "type": "string"
+          },
+          "lineCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "totalQuantity": {
+            "type": "number",
+            "description": "Suma sztuk"
+          },
+          "shipmentId": {
+            "type": "number",
+            "description": "Wysyłka, która utworzyła to wydanie – zmienia się i usuwa razem z nią"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "date",
+          "lineCount",
+          "totalQuantity",
+          "createdAt"
+        ]
+      },
+      "DocumentLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "number"
+          },
+          "productSymbol": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu"
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pakiet, jeśli pozycja była pakietem"
+          },
+          "packageSku": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Liczba pakietów"
+          }
+        },
+        "required": [
+          "productId",
+          "productSymbol",
+          "productName",
+          "quantity"
+        ]
+      },
+      "DocumentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MovementType"
+              }
+            ]
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma wydania"
+          },
+          "platformName": {
+            "type": "string",
+            "description": "Nazwa platformy wydania"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Numer faktury / karty przewozowej – opcjonalny"
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "Dostawca / odbiorca"
+          },
+          "note": {
+            "type": "string"
+          },
+          "lineCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "totalQuantity": {
+            "type": "number",
+            "description": "Suma sztuk"
+          },
+          "shipmentId": {
+            "type": "number",
+            "description": "Wysyłka, która utworzyła to wydanie – zmienia się i usuwa razem z nią"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentLineDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "date",
+          "lineCount",
+          "totalQuantity",
+          "createdAt",
+          "lines"
+        ]
+      },
+      "CreateDocumentLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "number",
+            "description": "Produkt – tylko na przyjęciu",
+            "example": 1
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pakiet – tylko na wydaniu",
+            "example": 3
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu albo liczba pakietów",
+            "minimum": 1,
+            "example": 500
+          }
+        },
+        "required": [
+          "quantity"
+        ]
+      },
+      "CreateDocumentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "IN = przyjęcie, OUT = wydanie",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MovementType"
+              }
+            ]
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma – wymagana na wydaniu, niedozwolona na przyjęciu",
+            "example": 1
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-24"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Numer faktury albo karty przewozowej – opcjonalny",
+            "example": "FV 123/10/2026",
+            "maxLength": 100
+          },
+          "counterparty": {
+            "type": "string",
+            "description": "Dostawca albo odbiorca",
+            "example": "Amazon",
+            "maxLength": 200
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDocumentLineDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "date",
+          "lines"
+        ]
+      },
+      "PlatformKind": {
+        "type": "string",
+        "enum": [
+          "AMAZON",
+          "OTHER"
+        ]
+      },
+      "PlatformDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformKind"
+              }
+            ]
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Liczba pakietów tej platformy"
+          },
+          "documentCount": {
+            "type": "number",
+            "description": "Liczba wydań na tę platformę"
+          },
+          "packingListCount": {
+            "type": "number",
+            "description": "Liczba list pakowania tej platformy"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "packageCount",
+          "documentCount",
+          "packingListCount",
+          "createdAt"
+        ]
+      },
+      "CreatePlatformDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Allegro",
+            "maxLength": 100
+          },
+          "kind": {
+            "default": "OTHER",
+            "description": "AMAZON = pakiety mają pola Amazona (FNSKU, ASIN, EAN/UPC)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformKind"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdatePlatformDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Allegro",
+            "maxLength": 100
+          },
+          "kind": {
+            "default": "OTHER",
+            "description": "AMAZON = pakiety mają pola Amazona (FNSKU, ASIN, EAN/UPC)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformKind"
+              }
+            ]
+          }
+        }
+      },
+      "ProductCodeType": {
+        "type": "string",
+        "enum": [
+          "EAN",
+          "UPC"
+        ]
+      },
+      "AmazonDetailsDto": {
+        "type": "object",
+        "properties": {
+          "fnsku": {
+            "type": "string",
+            "description": "Kod kreskowy Amazon (FNSKU)"
+          },
+          "asin": {
+            "type": "string"
+          },
+          "codeType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCodeType"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "Kod EAN albo UPC"
+          }
+        }
+      },
+      "PackageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "platformName": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productSymbol": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu w pakiecie"
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Stawka VAT produktu w %"
+          },
+          "netPrice": {
+            "type": "number",
+            "description": "Cena netto pakietu (wyliczana z ceny produktu)"
+          },
+          "grossPrice": {
+            "type": "number",
+            "description": "Cena brutto pakietu (wyliczana z ceny produktu)"
+          },
+          "weightG": {
+            "type": "number",
+            "description": "Waga w gramach"
+          },
+          "lengthCm": {
+            "type": "number",
+            "description": "Długość w cm"
+          },
+          "widthCm": {
+            "type": "number",
+            "description": "Szerokość w cm"
+          },
+          "heightCm": {
+            "type": "number",
+            "description": "Wysokość w cm"
+          },
+          "amazon": {
+            "description": "Dane Amazona (tylko platforma typu AMAZON)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AmazonDetailsDto"
+              }
+            ]
+          },
+          "available": {
+            "type": "number",
+            "description": "Ile pakietów da się skompletować z obecnego stanu produktu"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sku",
+          "platformId",
+          "platformName",
+          "productId",
+          "productSymbol",
+          "productName",
+          "quantity",
+          "vatRate",
+          "netPrice",
+          "grossPrice",
+          "available",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AmazonDetailsInputDto": {
+        "type": "object",
+        "properties": {
+          "fnsku": {
+            "type": "string",
+            "description": "Kod kreskowy Amazon (FNSKU)",
+            "example": "X001ABC123",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "asin": {
+            "type": "string",
+            "description": "ASIN – 10 znaków (litery i cyfry)",
+            "example": "B0C1234567",
+            "nullable": true
+          },
+          "codeType": {
+            "nullable": true,
+            "description": "Rodzaj kodu w polu code",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCodeType"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "Kod EAN albo UPC (zależnie od codeType)",
+            "example": "5901234123457",
+            "nullable": true,
+            "maxLength": 50
+          }
+        }
+      },
+      "CreatePackageDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "description": "Platforma, na której pakiet jest wystawiany",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Śruba M6x20 ocynk – 100 szt.",
+            "maxLength": 200
+          },
+          "sku": {
+            "type": "string",
+            "example": "KN1-100",
+            "maxLength": 50
+          },
+          "productId": {
+            "type": "number",
+            "description": "Produkt w pakiecie",
+            "example": 1
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu w pakiecie",
+            "minimum": 1,
+            "example": 100
+          },
+          "weightG": {
+            "type": "number",
+            "description": "Waga pakietu w gramach",
+            "example": 450,
+            "nullable": true
+          },
+          "lengthCm": {
+            "type": "number",
+            "description": "Długość opakowania w cm",
+            "example": 12,
+            "nullable": true
+          },
+          "widthCm": {
+            "type": "number",
+            "description": "Szerokość opakowania w cm",
+            "example": 8,
+            "nullable": true
+          },
+          "heightCm": {
+            "type": "number",
+            "description": "Wysokość opakowania w cm",
+            "example": 4,
+            "nullable": true
+          },
+          "amazon": {
+            "nullable": true,
+            "description": "Tylko dla platformy typu AMAZON. null = usunięcie danych Amazona.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AmazonDetailsInputDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "platformId",
+          "name",
+          "sku",
+          "productId",
+          "quantity"
+        ]
+      },
+      "UpdatePackageDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Śruba M6x20 ocynk – 100 szt.",
+            "maxLength": 200
+          },
+          "sku": {
+            "type": "string",
+            "example": "KN1-100",
+            "maxLength": 50
+          },
+          "productId": {
+            "type": "number",
+            "description": "Produkt w pakiecie",
+            "example": 1
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu w pakiecie",
+            "minimum": 1,
+            "example": 100
+          },
+          "weightG": {
+            "type": "number",
+            "description": "Waga pakietu w gramach",
+            "example": 450,
+            "nullable": true
+          },
+          "lengthCm": {
+            "type": "number",
+            "description": "Długość opakowania w cm",
+            "example": 12,
+            "nullable": true
+          },
+          "widthCm": {
+            "type": "number",
+            "description": "Szerokość opakowania w cm",
+            "example": 8,
+            "nullable": true
+          },
+          "heightCm": {
+            "type": "number",
+            "description": "Wysokość opakowania w cm",
+            "example": 4,
+            "nullable": true
+          },
+          "amazon": {
+            "nullable": true,
+            "description": "Tylko dla platformy typu AMAZON. null = usunięcie danych Amazona.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AmazonDetailsInputDto"
+              }
+            ]
+          }
+        }
+      },
+      "DeletePackagesDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "PackageDeleteFailureDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string",
+            "description": "SKU pakietu (albo id, gdy pakiet nie istnieje)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Dlaczego nie usunięto"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "reason"
+        ]
+      },
+      "DeletePackagesResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "description": "Usunięte pakiety",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "failed": {
+            "description": "Pominięte – z dostępnymi sztukami albo na wydaniach",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageDeleteFailureDto"
+            }
+          }
+        },
+        "required": [
+          "deleted",
+          "failed"
+        ]
+      },
+      "PackingListSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "doneCount": {
+            "type": "number",
+            "description": "Pozycje gotowe"
+          },
+          "totalPackages": {
+            "type": "number",
+            "description": "Łącznie paczek do złożenia"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "platformId",
+          "name",
+          "date",
+          "itemCount",
+          "doneCount",
+          "totalPackages",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ProductReservationDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "number"
+          },
+          "units": {
+            "type": "number",
+            "description": "Sztuki produktu = suma paczek × sztuk w pakiecie"
+          }
+        },
+        "required": [
+          "productId",
+          "units"
+        ]
+      },
+      "PackingItemStatus": {
+        "type": "string",
+        "enum": [
+          "IN_PROGRESS",
+          "DONE"
+        ]
+      },
+      "PackingListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number",
+            "description": "Nr na liście (od 1)"
+          },
+          "packageId": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string",
+            "description": "Nazwa pakietu"
+          },
+          "fnsku": {
+            "type": "string",
+            "description": "Kod Amazon (FNSKU)"
+          },
+          "asin": {
+            "type": "string"
+          },
+          "codeType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCodeType"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "Kod kreskowy EAN/UPC"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productSymbol": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "unitsPerPackage": {
+            "type": "number",
+            "description": "Sztuk produktu w jednym pakiecie"
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Ile paczek złożyć"
+          },
+          "units": {
+            "type": "number",
+            "description": "Potrzebne sztuki produktu = paczki × sztuk w pakiecie"
+          },
+          "productStock": {
+            "type": "number",
+            "description": "Aktualny stan produktu w magazynie (sztuki)"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PackingItemStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "packageId",
+          "sku",
+          "packageName",
+          "productId",
+          "productSymbol",
+          "productName",
+          "unitsPerPackage",
+          "packageCount",
+          "units",
+          "productStock",
+          "status"
+        ]
+      },
+      "PackingListDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "doneCount": {
+            "type": "number",
+            "description": "Pozycje gotowe"
+          },
+          "totalPackages": {
+            "type": "number",
+            "description": "Łącznie paczek do złożenia"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackingListItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "platformId",
+          "name",
+          "date",
+          "itemCount",
+          "doneCount",
+          "totalPackages",
+          "createdAt",
+          "updatedAt",
+          "items"
+        ]
+      },
+      "PackingListItemInputDto": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "number",
+            "example": 3
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Ile paczek złożyć",
+            "minimum": 1,
+            "example": 10
+          },
+          "status": {
+            "description": "Domyślnie IN_PROGRESS",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PackingItemStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "packageId",
+          "packageCount"
+        ]
+      },
+      "CreatePackingListDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "description": "Platforma – wszystkie pakiety z listy muszą do niej należeć",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Lista pakowania nr 43/2026",
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-27"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackingListItemInputDto"
+            }
+          }
+        },
+        "required": [
+          "platformId",
+          "name",
+          "date",
+          "items"
+        ]
+      },
+      "UpdatePackingListDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Lista pakowania nr 43/2026",
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-27"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackingListItemInputDto"
+            }
+          }
+        }
+      },
+      "UpdatePackingItemsDto": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "example": [
+              4,
+              5,
+              6
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PackingItemStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "itemIds",
+          "status"
+        ]
+      },
+      "UpdatePackingItemDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PackingItemStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ShipmentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "number",
+            "description": "Wydanie, które zdjęło stan"
+          },
+          "boxCount": {
+            "type": "number"
+          },
+          "totalPackages": {
+            "type": "number",
+            "description": "Łącznie pakietów we wszystkich pudełkach"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "platformId",
+          "name",
+          "date",
+          "boxCount",
+          "totalPackages",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ShipmentBoxItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number",
+            "description": "Nr w pudełku (od 1)"
+          },
+          "packageId": {
+            "type": "number"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "fnsku": {
+            "type": "string",
+            "description": "Kod Amazon (FNSKU) – barcode na etykiecie"
+          },
+          "asin": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "EAN/UPC"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productSymbol": {
+            "type": "string"
+          },
+          "unitsPerPackage": {
+            "type": "number",
+            "description": "Sztuk produktu w pakiecie"
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Pakietów w pudełku"
+          },
+          "units": {
+            "type": "number",
+            "description": "Sztuk produktu = pakiety × sztuk w pakiecie"
+          },
+          "weightG": {
+            "type": "number",
+            "description": "Waga jednego pakietu (g)"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "packageId",
+          "sku",
+          "packageName",
+          "productId",
+          "productSymbol",
+          "unitsPerPackage",
+          "packageCount",
+          "units"
+        ]
+      },
+      "ShipmentBoxDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number",
+            "description": "Numer pudełka (od 1)"
+          },
+          "label": {
+            "type": "string",
+            "description": "Nazwa pudełka, np. R158-1"
+          },
+          "lengthCm": {
+            "type": "number"
+          },
+          "widthCm": {
+            "type": "number"
+          },
+          "heightCm": {
+            "type": "number"
+          },
+          "weightKg": {
+            "type": "number",
+            "description": "Zważona waga kartonu (kg)"
+          },
+          "contentWeightG": {
+            "type": "number",
+            "description": "Waga zawartości z wag pakietów (g)"
+          },
+          "itemsWithoutWeight": {
+            "type": "number",
+            "description": "Pozycje bez wagi pakietu – waga zawartości jest wtedy niepełna"
+          },
+          "totalPackages": {
+            "type": "number",
+            "description": "Pakietów w pudełku"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentBoxItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "label",
+          "contentWeightG",
+          "itemsWithoutWeight",
+          "totalPackages",
+          "items"
+        ]
+      },
+      "ShipmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "number",
+            "description": "Wydanie, które zdjęło stan"
+          },
+          "boxCount": {
+            "type": "number"
+          },
+          "totalPackages": {
+            "type": "number",
+            "description": "Łącznie pakietów we wszystkich pudełkach"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "boxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentBoxDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "platformId",
+          "name",
+          "date",
+          "boxCount",
+          "totalPackages",
+          "createdAt",
+          "updatedAt",
+          "boxes"
+        ]
+      },
+      "ShipmentBoxItemInputDto": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "number",
+            "example": 3
+          },
+          "packageCount": {
+            "type": "number",
+            "description": "Ile pakietów w pudełku",
+            "minimum": 1,
+            "example": 10
+          }
+        },
+        "required": [
+          "packageId",
+          "packageCount"
+        ]
+      },
+      "ShipmentBoxInputDto": {
+        "type": "object",
+        "properties": {
+          "lengthCm": {
+            "type": "object",
+            "nullable": true,
+            "example": 60
+          },
+          "widthCm": {
+            "type": "object",
+            "nullable": true,
+            "example": 40
+          },
+          "heightCm": {
+            "type": "object",
+            "nullable": true,
+            "example": 40
+          },
+          "weightKg": {
+            "type": "object",
+            "nullable": true,
+            "description": "Zważona waga kartonu (kg); pusta = liczona z pakietów",
+            "example": 12.5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentBoxItemInputDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CreateShipmentDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "description": "Platforma – wszystkie pakiety muszą do niej należeć",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Nazwa wysyłki, np. R158",
+            "example": "R158",
+            "maxLength": 50
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-26"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "boxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentBoxInputDto"
+            }
+          }
+        },
+        "required": [
+          "platformId",
+          "name",
+          "date",
+          "boxes"
+        ]
+      },
+      "UpdateShipmentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nazwa wysyłki, np. R158",
+            "example": "R158",
+            "maxLength": 50
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-26"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "boxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentBoxInputDto"
+            }
+          }
+        }
+      },
+      "OrderSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date",
+          "itemCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number",
+            "description": "Nr na zamówieniu (od 1)"
+          },
+          "productId": {
+            "type": "number"
+          },
+          "productSymbol": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pusty = pozycja z samym produktem"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string",
+            "description": "Nazwa pakietu"
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma pakietu"
+          },
+          "fnsku": {
+            "type": "string",
+            "description": "Kod Amazon (FNSKU)"
+          },
+          "asin": {
+            "type": "string"
+          },
+          "unitsPerItem": {
+            "type": "number",
+            "description": "Sztuk produktu w jednej pozycji: 1 dla produktu, ilość w pakiecie dla pakietu"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba paczek (pakiet) albo sztuk (produkt)"
+          },
+          "units": {
+            "type": "number",
+            "description": "Sztuki produktu = ilość × sztuk w pozycji"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "productId",
+          "productSymbol",
+          "productName",
+          "unitsPerItem",
+          "quantity",
+          "units"
+        ]
+      },
+      "OrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "type": "string"
+          },
+          "itemCount": {
+            "type": "number",
+            "description": "Liczba pozycji"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date",
+          "itemCount",
+          "createdAt",
+          "updatedAt",
+          "items"
+        ]
+      },
+      "OrderItemInputDto": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "number",
+            "description": "Pakiet (np. KN1-50) – wtedy productId pomiń",
+            "example": 3
+          },
+          "productId": {
+            "type": "number",
+            "description": "Sam produkt w sztukach – gdy brak packageId",
+            "example": 1
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba paczek (pakiet) albo sztuk (produkt)",
+            "minimum": 1,
+            "example": 10
+          }
+        },
+        "required": [
+          "quantity"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Zamówienie 28.10.2026",
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-28"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemInputDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "date",
+          "items"
+        ]
+      },
+      "UpdateOrderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Zamówienie 28.10.2026",
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-28"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemInputDto"
+            }
+          }
+        }
+      },
+      "SeedResultDto": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "number",
+            "description": "Dodane produkty"
+          },
+          "packages": {
+            "type": "number",
+            "description": "Dodane pakiety"
+          },
+          "receiptLines": {
+            "type": "number",
+            "description": "Pozycje przyjęcia „DEMO – stan początkowy”"
+          }
+        },
+        "required": [
+          "products",
+          "packages",
+          "receiptLines"
+        ]
+      },
+      "ClearResultDto": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "number"
+          },
+          "packages": {
+            "type": "number"
+          },
+          "documents": {
+            "type": "number"
+          },
+          "movements": {
+            "type": "number"
+          },
+          "packingLists": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "products",
+          "packages",
+          "documents",
+          "movements",
+          "packingLists"
+        ]
+      },
+      "SaveSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Dowolny obiekt JSON (np. układ kolumn listy)",
+            "example": {
+              "desktop": {
+                "order": [
+                  "sku",
+                  "name"
+                ],
+                "hidden": []
+              }
+            }
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

@@ -51,6 +51,7 @@ test.describe('API: orders', () => {
 
     expect(response.status()).toBe(201);
     order = await response.json();
+    expect(order).toMatchSchema('OrderDto');
     expect(order).toMatchObject({
       name,
       itemCount: 2,
@@ -93,6 +94,7 @@ test.describe('API: orders', () => {
 
     expect(response.status()).toBe(200);
     const body: OrderSummary[] = await response.json();
+    expect(body).toMatchSchema('OrderSummaryDto[]');
     expect(body).toContainEqual(
       expect.objectContaining({ id: order.id, itemCount: 2 }),
     );
@@ -105,6 +107,7 @@ test.describe('API: orders', () => {
 
     expect(response.status()).toBe(200);
     const body: Order = await response.json();
+    expect(body).toMatchSchema('OrderDto');
     expect(body.itemCount).toBe(1);
     expect(body.items).toEqual([
       expect.objectContaining({ packageId: pkg.id, quantity: 5, units: 500 }),

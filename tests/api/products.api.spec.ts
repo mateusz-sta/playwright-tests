@@ -39,6 +39,7 @@ test.describe('API: products', () => {
 
       expect(response.status()).toBe(201);
       product = await response.json();
+      expect(product).toMatchSchema('ProductDto');
       createdIds.push(product.id);
       expect(product).toEqual({
         id: expect.any(Number),
@@ -67,6 +68,7 @@ test.describe('API: products', () => {
 
       expect(response.status()).toBe(200);
       const body: Product[] = await response.json();
+      expect(body).toMatchSchema('ProductDto[]');
       expect(body).toContainEqual(product);
     });
 
@@ -77,6 +79,7 @@ test.describe('API: products', () => {
       });
 
       expect(response.status()).toBe(200);
+      expect<unknown>(await response.json()).toMatchSchema('ProductDto');
       await expect(response.json()).resolves.toMatchObject({
         id: product.id,
         netPricePer1000: 20,
@@ -100,6 +103,7 @@ test.describe('API: products', () => {
 
       expect(response.status()).toBe(200);
       const body: StockMovement[] = await response.json();
+      expect(body).toMatchSchema('StockMovementDto[]');
       expect(body).toEqual([]);
     });
 
@@ -152,6 +156,7 @@ test.describe('API: products', () => {
       const created = await products.createBulk(inputs);
       expect(created.status()).toBe(201);
       const body: Product[] = await created.json();
+      expect(body).toMatchSchema('ProductDto[]');
       createdIds.push(...body.map((p) => p.id));
       expect(body.map((p) => p.symbol)).toEqual(inputs.map((p) => p.symbol));
 
@@ -160,6 +165,7 @@ test.describe('API: products', () => {
       });
       expect(deleted.status()).toBe(200);
       const result: DeleteProductsResult = await deleted.json();
+      expect(result).toMatchSchema('DeleteProductsResultDto');
       expect(result.deleted.sort()).toEqual(body.map((p) => p.id).sort());
       expect(result.failed).toEqual([
         expect.objectContaining({ id: MISSING_ID }),

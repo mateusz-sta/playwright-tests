@@ -22,6 +22,7 @@ test.describe('API: auth', () => {
 
       expect(response.status()).toBe(200);
       const body: LoginResponse = await response.json();
+      expect(body).toMatchSchema('LoginResponseDto');
       expect(body).toEqual({
         accessToken: expect.any(String),
         expiresAt: expect.any(String),
@@ -52,6 +53,7 @@ test.describe('API: auth', () => {
 
       expect(response.status()).toBe(200);
       const body: CurrentUser = await response.json();
+      expect(body).toMatchSchema('CurrentUserDto');
       expect(body).toEqual({
         id: expect.any(Number),
         username: user.username.toLowerCase(),
@@ -79,6 +81,7 @@ test.describe('API: auth', () => {
 
       expect(response.status()).toBe(200);
       const body: LoginResponse = await response.json();
+      expect(body).toMatchSchema('LoginResponseDto');
       expect(body.username).toBe(user.username.toLowerCase());
       expect(Date.parse(body.expiresAt)).toBeGreaterThan(Date.now());
       await expect(
