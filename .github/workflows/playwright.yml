@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+  # Every night at 03:00 UTC (04:00 in Poland in winter, 05:00 in summer).
+  schedule:
+    - cron: '0 3 * * *'
 permissions:
   contents: read
 jobs:
@@ -30,6 +33,18 @@ jobs:
           npm run tsc:check
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
+      # The app on Render's free plan sleeps when unused and needs up to a minute to start.
+      - name: Wake up the application
+        run: |
+          for attempt in $(seq 1 12); do
+            if curl -sf -o /dev/null --max-time 20 "$BASE_URL/api/docs-json"; then
+              echo "Application is up."
+              exit 0
+            fi
+            echo "Waiting for the application (attempt $attempt)..."
+            sleep 10
+          done
+          echo "::warning::Application did not respond – tests may fail."
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v4

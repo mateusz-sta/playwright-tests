@@ -60,8 +60,8 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 
 ### Test results dashboard (Allure):
 
-📊 **https://mateusz-sta.github.io/playwright-tests/** – updated after every run on `main`
-(push, merge or manual run: Actions → Playwright Tests → Run workflow).
+📊 **https://mateusz-sta.github.io/playwright-tests/** – updated after every run on `main`:
+every night at 03:00 UTC, after each push/merge, or on a manual run (Actions → Playwright Tests → Run workflow).
 
 - **Awesome** – all tests grouped by suite, with steps, errors and screenshots.
 - **Dashboard** – charts: current status, trends over previous runs, flaky tests.
