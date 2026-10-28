@@ -32,7 +32,7 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 ### CI (GitHub Actions):
 
 Tests run on every push and pull request to `main`. Add these repository secrets
-(Settings → Secrets and variables → Actions): `BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`.
+(Settings → Secrets and variables → Actions): `BASE_URL`, `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`.
 
 ### Available scripts:
 
