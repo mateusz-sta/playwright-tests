@@ -24,7 +24,7 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 
 ### Project structure:
 
-- `tests/` – test files (`*.spec.ts`), grouped by feature.
+- `tests/ui/` – browser tests (`*.spec.ts`), grouped by feature, run in the `chromium` project.
 - `tests/auth.setup.ts` – logs in once before the tests and saves the session to `playwright/.auth/user.json`;
   all tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
 - `pages/` – Page Objects; one class per page. Pages extend `BasePage` (`open()`, `expectToBeOpened()`),
@@ -67,6 +67,7 @@ Tests run on every push and pull request to `main`. Add these repository secrets
 - `test:headless` – runs Playwright tests in headless mode.
 - `test:headed` – runs Playwright tests with a visible browser for debugging.
 - `test:ui` – launches Playwright’s interactive UI.
+- `test:e2e` – runs only the browser tests (with the login `setup` step).
 - `test:api` – runs only the API tests.
 - `test:report` – opens the generated Playwright HTML report.
 - `tsc:check` – runs TypeScript compiler (strict mode, configured in `tsconfig.json`) to check for type errors without emitting files.
