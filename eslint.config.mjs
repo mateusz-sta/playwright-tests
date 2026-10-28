@@ -11,6 +11,9 @@ export default [
       'package-lock.json',
       'playwright-report/**',
       'test-results/**',
+      'allure-results/**',
+      'allure-report/**',
+      'allure-history/**',
     ],
   },
   { languageOptions: { globals: globals.node } },
@@ -24,6 +27,14 @@ export default [
   {
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'error',
+    },
+  },
+  {
+    // Command-line scripts (plain JS) report progress to the console.
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
   {
