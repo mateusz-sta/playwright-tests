@@ -31,6 +31,7 @@ test.describe('API: auth', () => {
     });
 
     // Uses a user that does not exist, so failed attempts never lock the test account (429).
+    // The specific message is intended: it tells which usernames exist on the environment.
     test('rejects an unknown user', async ({ authApi }) => {
       const response = await authApi.login({
         username: 'unknown.user',
@@ -38,6 +39,10 @@ test.describe('API: auth', () => {
       });
 
       expect(response.status()).toBe(401);
+      await expect(response.json()).resolves.toHaveProperty(
+        'message',
+        'Użytkownik nie istnieje',
+      );
     });
   });
 

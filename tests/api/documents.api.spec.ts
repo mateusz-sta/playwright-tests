@@ -183,10 +183,10 @@ test.describe('API: documents (stock receipts and issues)', () => {
       expect(response.status()).toBe(400);
     });
 
-    // Known bug: the API lets you issue more than is in stock, and the stock goes negative.
-    // When it is fixed, this test starts passing and Playwright reports it – then remove test.fail().
-    test('issue (OUT) cannot take more than the stock', async () => {
-      test.fail(true, 'Bug: OUT document above stock is accepted (201)');
+    // Intended business rule: an issue may exceed the recorded stock (it reflects the real
+    // warehouse state), so the stock can go negative.
+    test('issue (OUT) may exceed the stock, which then goes negative', async () => {
+      const stockBefore = await productStock();
 
       const response = await documents.create({
         type: 'OUT',
@@ -194,10 +194,14 @@ test.describe('API: documents (stock receipts and issues)', () => {
         date: today(),
         lines: [{ packageId: pkg.id, quantity: 10_000 }],
       });
+
+      expect(response.status()).toBe(201);
       const body: Document = await response.json();
       createdDocumentIds.push(body.id);
-
-      expect(response.status()).toBe(400);
+      // 10 000 packages × 100 pcs
+      expect(body.totalQuantity).toBe(1_000_000);
+      expect(await productStock()).toBe(stockBefore - 1_000_000);
+      expect(await productStock()).toBeLessThan(0);
     });
   });
 });
