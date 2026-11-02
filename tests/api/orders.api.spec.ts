@@ -31,6 +31,8 @@ test.describe('API: orders', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     if (order) await deleteIgnoringMissing(await orders.delete(order.id));
     await deleteCatalog(api, catalog);
     await api.dispose();

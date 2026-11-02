@@ -37,10 +37,12 @@ export async function createCatalog(
 }
 
 // Deletes in dependency order. Missing items (already deleted by a test) are fine.
+// `catalog` is undefined when createCatalog() failed in beforeAll – then there is nothing to delete.
 export async function deleteCatalog(
   request: APIRequestContext,
-  catalog: Catalog,
+  catalog: Catalog | undefined,
 ): Promise<void> {
+  if (!catalog) return;
   if (catalog.pkg) {
     await deleteIgnoringMissing(
       await new PackagesApi(request).delete(catalog.pkg.id),

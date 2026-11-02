@@ -59,9 +59,13 @@ test.describe('API: shipments', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     if (shipment)
       await deleteIgnoringMissing(await shipments.delete(shipment.id));
-    await deleteIgnoringMissing(await documents.delete(receipt.id));
+    if (receipt) {
+      await deleteIgnoringMissing(await documents.delete(receipt.id));
+    }
     await deleteCatalog(api, catalog);
     await api.dispose();
   });
