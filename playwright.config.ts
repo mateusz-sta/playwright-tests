@@ -41,8 +41,16 @@ export default defineConfig({
   },
   projects: [
     {
+      // Creates the test user when missing (e.g. after a DB reset). No retries:
+      // repeated failed logins get blocked by the API.
+      name: 'account-setup',
+      testMatch: /account\.setup\.ts/,
+      retries: 0,
+    },
+    {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: /auth\.setup\.ts/,
+      dependencies: ['account-setup'],
     },
     {
       name: 'chromium',
@@ -57,6 +65,7 @@ export default defineConfig({
       // API tests: no browser and no saved session, each test gets a token itself.
       name: 'api',
       testDir: './tests/api',
+      dependencies: ['account-setup'],
     },
   ],
 });
