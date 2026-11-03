@@ -1,6 +1,7 @@
 import {
   CreatePackageRequest,
   DeleteManyRequest,
+  PackagePricingInput,
   UpdatePackageRequest,
 } from './types';
 import { APIRequestContext, APIResponse } from '@playwright/test';
@@ -26,6 +27,13 @@ export class PackagesApi {
 
   async update(id: number, body: UpdatePackageRequest): Promise<APIResponse> {
     return this.request.patch(`/api/packages/${id}`, { data: body });
+  }
+
+  async updatePricing(
+    id: number,
+    body: PackagePricingInput,
+  ): Promise<APIResponse> {
+    return this.request.put(`/api/packages/${id}/pricing`, { data: body });
   }
 
   async delete(id: number): Promise<APIResponse> {

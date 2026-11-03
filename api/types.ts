@@ -173,9 +173,43 @@ export interface Package {
   lengthCm?: number;
   widthCm?: number;
   heightCm?: number;
+  amazon?: AmazonDetails;
+  pricing: PackagePricing;
   available: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// AmazonDetailsDto
+export interface AmazonDetails {
+  fnsku?: string;
+  asin?: string;
+  codeType?: 'EAN' | 'UPC';
+  code?: string;
+}
+
+// Marketplace
+export type Marketplace =
+  'DE' | 'FR' | 'IT' | 'ES' | 'UK' | 'PL' | 'BE' | 'SE' | 'NL';
+
+// FbaFeeDto
+export interface FbaFee {
+  marketplace: Marketplace;
+  feeNet: number;
+}
+
+// PackagePricingDto
+export interface PackagePricing {
+  markupEur?: number;
+  referralFeePercent?: number;
+  fbaFees: FbaFee[];
+}
+
+// PackagePricingInputDto – only sent fields change; feeNet: null removes the country
+export interface PackagePricingInput {
+  markupEur?: number | null;
+  referralFeePercent?: number | null;
+  fbaFees?: { marketplace: Marketplace; feeNet: number | null }[];
 }
 
 // DeletePackagesResultDto
@@ -437,6 +471,132 @@ export interface ShipmentSummary {
 // ShipmentDto
 export interface Shipment extends ShipmentSummary {
   boxes: ShipmentBox[];
+}
+
+// ---------- To-do notes ----------
+
+// TodoItemInputDto
+export interface TodoItemInput {
+  sku: string;
+  asin?: string;
+  content?: string;
+  date?: string;
+  done?: boolean;
+}
+
+// CreateTodoDto
+export interface CreateTodoRequest {
+  title: string;
+  content?: string;
+  date: string;
+  done?: boolean;
+  platformId?: number | null;
+  items?: TodoItemInput[];
+}
+
+// UpdateTodoDto
+export type UpdateTodoRequest = Partial<CreateTodoRequest>;
+
+// UpdateTodoItemsDto
+export interface UpdateTodoItemsRequest {
+  itemIds: number[];
+  done: boolean;
+}
+
+// UpdateTodoItemDto
+export interface UpdateTodoItemRequest {
+  content?: string;
+  date?: string;
+  done?: boolean;
+}
+
+// TodoItemDto
+export interface TodoItem {
+  id: number;
+  position: number;
+  sku: string;
+  packageId?: number;
+  packageName?: string;
+  asin?: string;
+  fnsku?: string;
+  content?: string;
+  date?: string;
+  done: boolean;
+}
+
+// TodoDto
+export interface Todo {
+  id: number;
+  title: string;
+  content?: string;
+  date: string;
+  done: boolean;
+  platformId?: number;
+  platformName?: string;
+  items: TodoItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ResolveSkusDto
+export interface ResolveSkusRequest {
+  platformId: number;
+  skus: string[];
+}
+
+// ResolveSkusResultDto
+export interface ResolveSkusResult {
+  items: {
+    sku: string;
+    packageId?: number;
+    packageName?: string;
+    asin?: string;
+  }[];
+  notFound: string[];
+  duplicates: string[];
+}
+
+// ---------- Photos ----------
+
+// CreatePhotoFolderDto
+export interface CreatePhotoFolderRequest {
+  name: string;
+}
+
+// ReorderPhotosDto / DeletePhotosDto
+export interface PhotoIdsRequest {
+  photoIds: number[];
+}
+
+// PhotoDto
+export interface Photo {
+  id: number;
+  path: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
+// PhotoFolderDto
+export interface PhotoFolder {
+  id: number;
+  name: string;
+  photoCount: number;
+  totalSize: number;
+  createdAt: string;
+}
+
+// PhotoFolderDetailDto
+export interface PhotoFolderDetail extends PhotoFolder {
+  photos: Photo[];
+}
+
+// File sent in a multipart upload
+export interface UploadFile {
+  name: string;
+  mimeType: string;
+  buffer: Buffer;
 }
 
 // ---------- User settings ----------

@@ -1,7 +1,7 @@
 import { PackagesApi } from '../api/PackagesApi';
 import { PlatformsApi } from '../api/PlatformsApi';
 import { ProductsApi } from '../api/ProductsApi';
-import { Package, Platform, Product } from '../api/types';
+import { Package, Platform, PlatformKind, Product } from '../api/types';
 import { buildPackage, buildPlatform, buildProduct } from './factories';
 import { APIRequestContext, APIResponse } from '@playwright/test';
 
@@ -13,22 +13,26 @@ export interface Catalog {
   pkg?: Package;
 }
 
+// kind AMAZON: the package also gets Amazon data (ASIN, FNSKU).
 export async function createCatalog(
   request: APIRequestContext,
-  options: { withPackage: boolean },
+  options: { withPackage: boolean; kind?: PlatformKind },
 ): Promise<Catalog> {
+  const kind = options.kind ?? 'OTHER';
   const platform = await readCreated<Platform>(
-    await new PlatformsApi(request).create(buildPlatform()),
+    await new PlatformsApi(request).create(buildPlatform({ kind })),
     'platform',
   );
   const product = await readCreated<Product>(
     await new ProductsApi(request).create(buildProduct()),
     'product',
   );
+  const amazon =
+    kind === 'AMAZON' ? { asin: 'B0C1234567', fnsku: 'X001ABC123' } : undefined;
   const pkg = options.withPackage
     ? await readCreated<Package>(
         await new PackagesApi(request).create(
-          buildPackage(platform.id, product.id),
+          buildPackage(platform.id, product.id, { amazon }),
         ),
         'package',
       )
