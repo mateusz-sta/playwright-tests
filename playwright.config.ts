@@ -41,11 +41,13 @@ export default defineConfig({
   },
   projects: [
     {
-      // Creates the test user when missing (e.g. after a DB reset). No retries:
-      // repeated failed logins get blocked by the API.
+      // Waits for the sleeping app, then creates the test user when missing
+      // (e.g. after a DB reset). No retries: repeated failed logins get blocked
+      // by the API. Long timeout: waking the app can take up to ~2 minutes.
       name: 'account-setup',
       testMatch: /account\.setup\.ts/,
       retries: 0,
+      timeout: 180_000,
     },
     {
       name: 'setup',
