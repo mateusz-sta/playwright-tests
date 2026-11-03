@@ -45,6 +45,8 @@ test.describe('API: packing lists', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     if (list) await deleteIgnoringMissing(await packingLists.delete(list.id));
     await deleteCatalog(api, catalog);
     await api.dispose();

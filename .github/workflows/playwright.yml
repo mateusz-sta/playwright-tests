@@ -18,6 +18,8 @@ jobs:
       BASE_URL: ${{ secrets.BASE_URL }}
       TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
       TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

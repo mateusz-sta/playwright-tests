@@ -23,6 +23,8 @@ test.describe('API: platforms', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     if (platform) {
       await deleteIgnoringMissing(await platforms.delete(platform.id));
     }

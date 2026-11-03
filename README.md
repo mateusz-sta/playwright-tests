@@ -25,6 +25,8 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 ### Project structure:
 
 - `tests/ui/` – browser tests (`*.spec.ts`), grouped by feature, run in the `chromium` project.
+- `tests/account.setup.ts` – runs first: checks that the test user can log in and, if the user does not exist
+  (e.g. after a database reset), creates it with the admin account. When it fails, UI and API tests do not run.
 - `tests/auth.setup.ts` – logs in once before the tests and saves the session to `playwright/.auth/user.json`;
   all tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
 - `pages/` – Page Objects; one class per page. Pages extend `BasePage` (`open()`, `expectToBeOpened()`),
@@ -78,7 +80,8 @@ every night at 03:00 UTC, after each push/merge, or on a manual run (Actions →
 ### CI (GitHub Actions):
 
 Tests run on every push and pull request to `main`. Add these repository secrets
-(Settings → Secrets and variables → Actions): `BASE_URL`, `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`.
+(Settings → Secrets and variables → Actions): `BASE_URL`, `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`,
+`ADMIN_USERNAME`, `ADMIN_PASSWORD`.
 
 ### Available scripts:
 

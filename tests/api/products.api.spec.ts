@@ -24,6 +24,8 @@ test.describe('API: products', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     await products.deleteBulk({ ids: createdIds });
     await api.dispose();
   });

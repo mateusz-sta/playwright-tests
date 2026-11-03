@@ -1021,6 +1021,53 @@
         ]
       }
     },
+    "/api/packages/{id}/pricing": {
+      "put": {
+        "operationId": "updatePackagePricing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackagePricingInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Składniki ceny sprzedaży pakietu (narzut, prowizja %, opłata stała)",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
     "/api/packages/delete": {
       "post": {
         "operationId": "deletePackages",
@@ -1678,6 +1725,592 @@
         "summary": "Usuwa zamówienie",
         "tags": [
           "orders"
+        ]
+      }
+    },
+    "/api/todos": {
+      "get": {
+        "operationId": "listTodos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Notatki „Do zrobienia” z pakietami (najnowsze na górze)",
+        "tags": [
+          "todos"
+        ]
+      },
+      "post": {
+        "operationId": "createTodo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTodoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          }
+        },
+        "summary": "Nowa notatka – ogólna albo z pakietami po SKU",
+        "tags": [
+          "todos"
+        ]
+      }
+    },
+    "/api/todos/resolve-skus": {
+      "post": {
+        "operationId": "resolveTodoSkus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSkusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveSkusResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane albo platforma nie istnieje"
+          }
+        },
+        "summary": "Wklejone SKU → pakiety platformy w tej samej kolejności, z listą nieznalezionych (nic nie zapisuje)",
+        "tags": [
+          "todos"
+        ]
+      }
+    },
+    "/api/todos/{id}": {
+      "get": {
+        "operationId": "getTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Notatka z pakietami",
+        "tags": [
+          "todos"
+        ]
+      },
+      "put": {
+        "operationId": "updateTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTodoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zmiana notatki; podane pakiety zastępują dotychczasowe",
+        "tags": [
+          "todos"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usuwa notatkę",
+        "tags": [
+          "todos"
+        ]
+      }
+    },
+    "/api/todos/{id}/items": {
+      "patch": {
+        "operationId": "updateTodoItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTodoItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Odhaczenie wielu pakietów naraz",
+        "tags": [
+          "todos"
+        ]
+      }
+    },
+    "/api/todos/{id}/items/{itemId}": {
+      "patch": {
+        "operationId": "updateTodoItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTodoItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Zmiana jednego pakietu na notatce (np. odhaczenie)",
+        "tags": [
+          "todos"
+        ]
+      }
+    },
+    "/api/photo-folders": {
+      "get": {
+        "operationId": "listPhotoFolders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoFolderDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Foldery zdjęć z liczbą zdjęć i zajętym miejscem",
+        "tags": [
+          "photos"
+        ]
+      },
+      "post": {
+        "operationId": "createPhotoFolder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePhotoFolderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoFolderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Brak nazwy"
+          },
+          "409": {
+            "description": "Folder o tej nazwie już istnieje"
+          }
+        },
+        "summary": "Nowy folder zdjęć",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/photo-folders/{id}": {
+      "get": {
+        "operationId": "getPhotoFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoFolderDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Folder ze zdjęciami w kolejności wgrania",
+        "tags": [
+          "photos"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePhotoFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Usuwa folder i kasuje z dysku wszystkie jego zdjęcia",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/photo-folders/{id}/photos": {
+      "post": {
+        "operationId": "uploadPhotos",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "files"
+                ],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Brak plików, ponad 20 plików albo plik inny niż JPG/PNG/GIF/WebP"
+          },
+          "404": {
+            "description": ""
+          },
+          "413": {
+            "description": "Plik większy niż 20 MB"
+          }
+        },
+        "summary": "Wgrywa zdjęcia do folderu (pliki bez zmian) – wszystkie albo żadne",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/photo-folders/{id}/order": {
+      "put": {
+        "operationId": "reorderPhotos",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPhotosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoFolderDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Lista nie zawiera dokładnie wszystkich zdjęć folderu"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Nowa kolejność zdjęć folderu (np. zdjęcie główne pierwsze)",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/photos/delete": {
+      "post": {
+        "operationId": "deletePhotos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePhotosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Pusta lista albo błędne id"
+          }
+        },
+        "summary": "Kasuje z dysku zaznaczone zdjęcia – ich linki przestają działać",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/photos/{id}": {
+      "delete": {
+        "operationId": "deletePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Kasuje zdjęcie z dysku – link przestaje działać",
+        "tags": [
+          "photos"
         ]
       }
     },
@@ -2559,6 +3192,63 @@
           }
         }
       },
+      "Marketplace": {
+        "type": "string",
+        "enum": [
+          "DE",
+          "FR",
+          "IT",
+          "ES",
+          "UK",
+          "PL",
+          "BE",
+          "SE",
+          "NL"
+        ]
+      },
+      "FbaFeeDto": {
+        "type": "object",
+        "properties": {
+          "marketplace": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Marketplace"
+              }
+            ]
+          },
+          "feeNet": {
+            "type": "number",
+            "description": "Opłata FBA netto w walucie rynku"
+          }
+        },
+        "required": [
+          "marketplace",
+          "feeNet"
+        ]
+      },
+      "PackagePricingDto": {
+        "type": "object",
+        "properties": {
+          "markupEur": {
+            "type": "number",
+            "description": "Narzut w EUR netto"
+          },
+          "referralFeePercent": {
+            "type": "number",
+            "description": "Referral fee w % od ceny sprzedaży"
+          },
+          "fbaFees": {
+            "description": "Opłaty FBA wpisane dla krajów (pozostałe puste)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FbaFeeDto"
+            }
+          }
+        },
+        "required": [
+          "fbaFees"
+        ]
+      },
       "PackageDto": {
         "type": "object",
         "properties": {
@@ -2626,6 +3316,14 @@
               }
             ]
           },
+          "pricing": {
+            "description": "Składniki ceny sprzedaży (ekran „Wyliczanie cen”)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PackagePricingDto"
+              }
+            ]
+          },
           "available": {
             "type": "number",
             "description": "Ile pakietów da się skompletować z obecnego stanu produktu"
@@ -2652,6 +3350,7 @@
           "vatRate",
           "netPrice",
           "grossPrice",
+          "pricing",
           "available",
           "createdAt",
           "updatedAt"
@@ -2820,6 +3519,54 @@
                 "$ref": "#/components/schemas/AmazonDetailsInputDto"
               }
             ]
+          }
+        }
+      },
+      "FbaFeeInputDto": {
+        "type": "object",
+        "properties": {
+          "marketplace": {
+            "example": "DE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Marketplace"
+              }
+            ]
+          },
+          "feeNet": {
+            "type": "number",
+            "description": "Opłata FBA netto w walucie rynku",
+            "example": 2.82,
+            "nullable": true
+          }
+        },
+        "required": [
+          "marketplace",
+          "feeNet"
+        ]
+      },
+      "PackagePricingInputDto": {
+        "type": "object",
+        "properties": {
+          "markupEur": {
+            "type": "number",
+            "description": "Narzut w EUR netto",
+            "example": 10,
+            "nullable": true
+          },
+          "referralFeePercent": {
+            "type": "number",
+            "description": "Referral fee w % od ceny sprzedaży",
+            "example": 15,
+            "nullable": true,
+            "maximum": 99
+          },
+          "fbaFees": {
+            "description": "Opłaty FBA – tylko zmieniane kraje",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FbaFeeInputDto"
+            }
           }
         }
       },
@@ -3809,6 +4556,485 @@
             }
           }
         }
+      },
+      "TodoItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number",
+            "description": "Nr na liście (od 1) – kolejność jak przy wklejeniu"
+          },
+          "sku": {
+            "type": "string",
+            "description": "SKU pakietu (bieżące) albo wpisane, gdy pakietu nie ma"
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pusty = brak pakietu o tym SKU na platformie notatki"
+          },
+          "packageName": {
+            "type": "string",
+            "description": "Nazwa pakietu"
+          },
+          "asin": {
+            "type": "string",
+            "description": "Z danych Amazona pakietu albo wpisany ręcznie, gdy pakietu nie ma"
+          },
+          "fnsku": {
+            "type": "string",
+            "description": "Kod Amazon (FNSKU)"
+          },
+          "content": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "sku",
+          "done"
+        ]
+      },
+      "TodoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "platformId": {
+            "type": "number"
+          },
+          "platformName": {
+            "type": "string"
+          },
+          "items": {
+            "description": "Pakiety w kolejności; pusto = notatka ogólna",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoItemDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "date",
+          "done",
+          "items",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ResolveSkusDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "description": "Platforma, w której szukać SKU",
+            "example": 1
+          },
+          "skus": {
+            "description": "SKU w kolejności – puste i białe znaki pomijane",
+            "example": [
+              "ZM1-100-OLD",
+              "ZM1-50-OLD"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "platformId",
+          "skus"
+        ]
+      },
+      "ResolvedSkuDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "description": "SKU pakietu albo wpisane (po obcięciu spacji), gdy pakietu nie ma"
+          },
+          "packageId": {
+            "type": "number",
+            "description": "Pusty = nie znaleziono"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "asin": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku"
+        ]
+      },
+      "ResolveSkusResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "W kolejności podanej, bez powtórzeń",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedSkuDto"
+            }
+          },
+          "notFound": {
+            "description": "SKU, których nie ma na platformie",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duplicates": {
+            "description": "SKU podane więcej niż raz – zostało pierwsze",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "items",
+          "notFound",
+          "duplicates"
+        ]
+      },
+      "TodoItemInputDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "example": "ZM1-100-OLD",
+            "maxLength": 200,
+            "description": "SKU pakietu albo dowolny tekst, gdy pakietu nie ma"
+          },
+          "asin": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Dowolny tekst – zapisywany tylko, gdy SKU nie pasuje do pakietu"
+          },
+          "content": {
+            "type": "string",
+            "example": "NOWY parent OK, brand HEXATON",
+            "maxLength": 2000
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-26"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "sku"
+        ]
+      },
+      "CreateTodoDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "ZM PARENT OLD",
+            "maxLength": 200
+          },
+          "content": {
+            "type": "string",
+            "example": "B0GPYKK8JY",
+            "maxLength": 2000
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-26"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma – wymagana, gdy są pakiety (SKU szukane tylko w niej)",
+            "nullable": true
+          },
+          "items": {
+            "description": "Pakiety w podanej kolejności; pusto = notatka ogólna",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoItemInputDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "date"
+        ]
+      },
+      "UpdateTodoDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "ZM PARENT OLD",
+            "maxLength": 200
+          },
+          "content": {
+            "type": "string",
+            "example": "B0GPYKK8JY",
+            "maxLength": 2000
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-26"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          },
+          "platformId": {
+            "type": "number",
+            "description": "Platforma – wymagana, gdy są pakiety (SKU szukane tylko w niej)",
+            "nullable": true
+          },
+          "items": {
+            "description": "Pakiety w podanej kolejności; pusto = notatka ogólna",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoItemInputDto"
+            }
+          }
+        }
+      },
+      "UpdateTodoItemsDto": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "example": [
+              4,
+              5,
+              6
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "done": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "itemIds",
+          "done"
+        ]
+      },
+      "UpdateTodoItemDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "example": "NOWY parent OK, brand HEXATON",
+            "maxLength": 2000
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-26"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "PhotoFolderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photoCount": {
+            "type": "number"
+          },
+          "totalSize": {
+            "type": "number",
+            "description": "Suma rozmiarów zdjęć w bajtach"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "photoCount",
+          "totalSize",
+          "createdAt"
+        ]
+      },
+      "PhotoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "path": {
+            "type": "string",
+            "description": "Ścieżka publicznego linku, np. /api/img/<token>.jpg – adres strony doklejany po stronie klienta"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number",
+            "description": "Bajty"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "originalName",
+          "mimeType",
+          "size",
+          "createdAt"
+        ]
+      },
+      "PhotoFolderDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photoCount": {
+            "type": "number"
+          },
+          "totalSize": {
+            "type": "number",
+            "description": "Suma rozmiarów zdjęć w bajtach"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "photos": {
+            "description": "W kolejności wgrania",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PhotoDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "photoCount",
+          "totalSize",
+          "createdAt",
+          "photos"
+        ]
+      },
+      "CreatePhotoFolderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "ZM",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ReorderPhotosDto": {
+        "type": "object",
+        "properties": {
+          "photoIds": {
+            "example": [
+              12,
+              10,
+              11
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "photoIds"
+        ]
+      },
+      "DeletePhotosDto": {
+        "type": "object",
+        "properties": {
+          "photoIds": {
+            "example": [
+              4,
+              5,
+              6
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "photoIds"
+        ]
       },
       "SeedResultDto": {
         "type": "object",

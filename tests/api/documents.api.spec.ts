@@ -45,6 +45,8 @@ test.describe('API: documents (stock receipts and issues)', () => {
   });
 
   test.afterAll(async () => {
+    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
+    if (!api) return;
     // Issues first, then receipts – this puts the stock back to 0.
     for (const id of createdDocumentIds.filter(Boolean).reverse()) {
       await deleteIgnoringMissing(await documents.delete(id));
