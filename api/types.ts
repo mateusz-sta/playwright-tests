@@ -72,6 +72,9 @@ export interface Product {
   netUnitPrice: number;
   grossUnitPrice: number;
   stock: number;
+  // Variant group set by hand; null – group derived from the symbol / name
+  groupCode: string | null;
+  groupName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -173,8 +176,12 @@ export interface Package {
   lengthCm?: number;
   widthCm?: number;
   heightCm?: number;
+  // Only packages of an AMAZON platform
   amazon?: AmazonDetails;
-  pricing: PackagePricing;
+  // Order on the platform's list
+  position: number;
+  productGroupCode: string | null;
+  productGroupName: string | null;
   available: number;
   createdAt: string;
   updatedAt: string;
@@ -186,30 +193,44 @@ export interface AmazonDetails {
   asin?: string;
   codeType?: 'EAN' | 'UPC';
   code?: string;
+  pricing: AmazonPricing;
 }
 
 // Marketplace
 export type Marketplace =
   'DE' | 'FR' | 'IT' | 'ES' | 'UK' | 'PL' | 'BE' | 'SE' | 'NL';
 
-// FbaFeeDto
-export interface FbaFee {
+// MarketPricingDto – amounts in the market's currency
+export interface MarketPricing {
   marketplace: Marketplace;
-  feeNet: number;
-}
-
-// PackagePricingDto
-export interface PackagePricing {
-  markupEur?: number;
+  markup?: number;
   referralFeePercent?: number;
-  fbaFees: FbaFee[];
+  fbaFeeNet?: number;
+  checkPrice?: number;
+  msrpPercent?: number;
+  quantityDiscountPercent?: number;
 }
 
-// PackagePricingInputDto – only sent fields change; feeNet: null removes the country
-export interface PackagePricingInput {
-  markupEur?: number | null;
-  referralFeePercent?: number | null;
-  fbaFees?: { marketplace: Marketplace; feeNet: number | null }[];
+// AmazonPricingDto – only markets with values, alphabetically
+export interface AmazonPricing {
+  markets: MarketPricing[];
+}
+
+// MarketPricingInputDto – only sent fields change; null clears a value
+export type MarketPricingInput = {
+  marketplace: Marketplace;
+} & {
+  [K in Exclude<keyof MarketPricing, 'marketplace'>]?: number | null;
+};
+
+// AmazonPricingInputDto
+export interface AmazonPricingInput {
+  markets: MarketPricingInput[];
+}
+
+// UpdateAmazonPricingManyDto – all or nothing
+export interface UpdateAmazonPricingManyRequest {
+  items: (AmazonPricingInput & { id: number })[];
 }
 
 // DeletePackagesResultDto

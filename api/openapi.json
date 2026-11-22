@@ -421,6 +421,47 @@
         ]
       }
     },
+    "/api/products/group": {
+      "post": {
+        "operationId": "setProductGroup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetProductGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pusta albo błędna lista id, za długi kod/nazwa, brak kodu i nazwy"
+          },
+          "404": {
+            "description": "Któregoś produktu nie ma"
+          }
+        },
+        "summary": "Zbiorcza zmiana kodu i/lub nazwy grupy wariantów (null – wartość automatyczna)",
+        "tags": [
+          "products"
+        ]
+      }
+    },
     "/api/products/delete": {
       "post": {
         "operationId": "deleteProducts",
@@ -1021,48 +1062,64 @@
         ]
       }
     },
-    "/api/packages/{id}/pricing": {
-      "put": {
-        "operationId": "updatePackagePricing",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
+    "/api/packages/import": {
+      "post": {
+        "operationId": "importPackages",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PackagePricingInputDto"
+                "$ref": "#/components/schemas/ImportPackagesDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PackageDto"
+                  "$ref": "#/components/schemas/ImportPackagesResultDto"
                 }
               }
             }
           },
           "400": {
-            "description": ""
-          },
-          "404": {
-            "description": ""
+            "description": "Błędne dane – komunikat wskazuje SKU"
           }
         },
-        "summary": "Składniki ceny sprzedaży pakietu (narzut, prowizja %, opłata stała)",
+        "summary": "Import z Excela: nowe pakiety, zmiany istniejących (po SKU) i kolejność jak w pliku – wszystko albo nic",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/order": {
+      "put": {
+        "operationId": "reorderPackages",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPackagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Pakiet spoza platformy albo nieistniejący"
+          }
+        },
+        "summary": "Nowa kolejność pakietów platformy (strzałki w grupie)",
         "tags": [
           "packages"
         ]
@@ -1098,6 +1155,94 @@
           }
         },
         "summary": "Zbiorcze usuwanie – usuwa pakiety z dostępnością 0 i bez wydań, resztę zwraca z powodem",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/amazon/pricing": {
+      "put": {
+        "operationId": "updateAmazonPricingMany",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAmazonPricingManyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PackageDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pakiet spoza platformy typu Amazon albo błędne dane"
+          },
+          "404": {
+            "description": "Któryś pakiet nie istnieje"
+          }
+        },
+        "summary": "Składniki ceny wielu pakietów naraz – import z Excela; zapisują się wszystkie albo żaden",
+        "tags": [
+          "packages"
+        ]
+      }
+    },
+    "/api/packages/{id}/amazon/pricing": {
+      "put": {
+        "operationId": "updateAmazonPricing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AmazonPricingInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pakiet nie jest z platformy typu Amazon albo błędne dane"
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "Składniki ceny sprzedaży pakietu na rynkach Amazona (narzut, referral fee %, FBA, cena do sprawdzenia, MSRP %, rabat %)",
         "tags": [
           "packages"
         ]
@@ -2585,6 +2730,16 @@
           "symbol": {
             "type": "string"
           },
+          "groupCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kod grupy wariantów nadany ręcznie; null – grupa liczona z symbolu"
+          },
+          "groupName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nazwa grupy wariantów nadana ręcznie; null – wspólny początek nazw wariantów"
+          },
           "vatRate": {
             "type": "number",
             "description": "Stawka VAT w %"
@@ -2622,6 +2777,8 @@
           "id",
           "name",
           "symbol",
+          "groupCode",
+          "groupName",
           "vatRate",
           "netPricePer1000",
           "grossPricePer1000",
@@ -2691,6 +2848,39 @@
             "example": 23
           }
         }
+      },
+      "SetProductGroupDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "groupCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "KNZ",
+            "maxLength": 50,
+            "description": "Kod grupy; null albo pusty – grupa z symbolu (obcięty numer z końca); pominięty – bez zmian"
+          },
+          "groupName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Konfirmat ocynk żółty",
+            "maxLength": 200,
+            "description": "Nazwa grupy; null albo pusta – wspólny początek nazw wariantów; pominięta – bez zmian"
+          }
+        },
+        "required": [
+          "ids"
+        ]
       },
       "DeleteProductsDto": {
         "type": "object",
@@ -3169,6 +3359,74 @@
           "UPC"
         ]
       },
+      "Marketplace": {
+        "type": "string",
+        "enum": [
+          "DE",
+          "FR",
+          "IT",
+          "ES",
+          "UK",
+          "PL",
+          "BE",
+          "SE",
+          "NL"
+        ]
+      },
+      "MarketPricingDto": {
+        "type": "object",
+        "properties": {
+          "marketplace": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Marketplace"
+              }
+            ]
+          },
+          "markup": {
+            "type": "number",
+            "description": "Narzut netto w walucie rynku"
+          },
+          "referralFeePercent": {
+            "type": "number",
+            "description": "Referral fee w % od ceny sprzedaży"
+          },
+          "fbaFeeNet": {
+            "type": "number",
+            "description": "Opłata FBA netto w walucie rynku"
+          },
+          "checkPrice": {
+            "type": "number",
+            "description": "Cena do sprawdzenia brutto w walucie rynku (ekran „Sprawdzenie cen”)"
+          },
+          "msrpPercent": {
+            "type": "number",
+            "description": "Narzut MSRP w % – MSRP = cena × (1 + %) (ekran „Cena finalna”)"
+          },
+          "quantityDiscountPercent": {
+            "type": "number",
+            "description": "Rabat ilościowy w % (ekran „Cena finalna”)"
+          }
+        },
+        "required": [
+          "marketplace"
+        ]
+      },
+      "AmazonPricingDto": {
+        "type": "object",
+        "properties": {
+          "markets": {
+            "description": "Rynki z wpisanymi wartościami (pozostałe puste), alfabetycznie",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketPricingDto"
+            }
+          }
+        },
+        "required": [
+          "markets"
+        ]
+      },
       "AmazonDetailsDto": {
         "type": "object",
         "properties": {
@@ -3189,64 +3447,18 @@
           "code": {
             "type": "string",
             "description": "Kod EAN albo UPC"
-          }
-        }
-      },
-      "Marketplace": {
-        "type": "string",
-        "enum": [
-          "DE",
-          "FR",
-          "IT",
-          "ES",
-          "UK",
-          "PL",
-          "BE",
-          "SE",
-          "NL"
-        ]
-      },
-      "FbaFeeDto": {
-        "type": "object",
-        "properties": {
-          "marketplace": {
+          },
+          "pricing": {
+            "description": "Składniki ceny sprzedaży (ekran „Wyliczanie cen”)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/Marketplace"
+                "$ref": "#/components/schemas/AmazonPricingDto"
               }
             ]
-          },
-          "feeNet": {
-            "type": "number",
-            "description": "Opłata FBA netto w walucie rynku"
           }
         },
         "required": [
-          "marketplace",
-          "feeNet"
-        ]
-      },
-      "PackagePricingDto": {
-        "type": "object",
-        "properties": {
-          "markupEur": {
-            "type": "number",
-            "description": "Narzut w EUR netto"
-          },
-          "referralFeePercent": {
-            "type": "number",
-            "description": "Referral fee w % od ceny sprzedaży"
-          },
-          "fbaFees": {
-            "description": "Opłaty FBA wpisane dla krajów (pozostałe puste)",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FbaFeeDto"
-            }
-          }
-        },
-        "required": [
-          "fbaFees"
+          "pricing"
         ]
       },
       "PackageDto": {
@@ -3261,6 +3473,10 @@
           "sku": {
             "type": "string"
           },
+          "position": {
+            "type": "number",
+            "description": "Kolejność na liście platformy (rosnąco; przy równych – po SKU)"
+          },
           "platformId": {
             "type": "number"
           },
@@ -3272,6 +3488,16 @@
           },
           "productSymbol": {
             "type": "string"
+          },
+          "productGroupCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kod grupy wariantów produktu nadany ręcznie; null – grupa z symbolu produktu"
+          },
+          "productGroupName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nazwa grupy wariantów produktu nadana ręcznie; null – wspólny początek nazw"
           },
           "productName": {
             "type": "string"
@@ -3309,18 +3535,10 @@
             "description": "Wysokość w cm"
           },
           "amazon": {
-            "description": "Dane Amazona (tylko platforma typu AMAZON)",
+            "description": "Dane Amazona z wyceną – tylko platforma typu AMAZON",
             "allOf": [
               {
                 "$ref": "#/components/schemas/AmazonDetailsDto"
-              }
-            ]
-          },
-          "pricing": {
-            "description": "Składniki ceny sprzedaży (ekran „Wyliczanie cen”)",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PackagePricingDto"
               }
             ]
           },
@@ -3341,16 +3559,18 @@
           "id",
           "name",
           "sku",
+          "position",
           "platformId",
           "platformName",
           "productId",
           "productSymbol",
+          "productGroupCode",
+          "productGroupName",
           "productName",
           "quantity",
           "vatRate",
           "netPrice",
           "grossPrice",
-          "pricing",
           "available",
           "createdAt",
           "updatedAt"
@@ -3462,6 +3682,136 @@
           "quantity"
         ]
       },
+      "ImportPackageItemDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "example": "KN1-100",
+            "maxLength": 50
+          },
+          "name": {
+            "type": "string",
+            "example": "Śruba M6x20 ocynk – 100 szt.",
+            "maxLength": 200
+          },
+          "productId": {
+            "type": "number",
+            "description": "Produkt w pakiecie",
+            "example": 1
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Liczba sztuk produktu w pakiecie",
+            "minimum": 1,
+            "example": 100
+          },
+          "weightG": {
+            "type": "number",
+            "description": "Waga pakietu w gramach",
+            "example": 450,
+            "nullable": true
+          },
+          "lengthCm": {
+            "type": "number",
+            "description": "Długość opakowania w cm",
+            "example": 12,
+            "nullable": true
+          },
+          "widthCm": {
+            "type": "number",
+            "description": "Szerokość opakowania w cm",
+            "example": 8,
+            "nullable": true
+          },
+          "heightCm": {
+            "type": "number",
+            "description": "Wysokość opakowania w cm",
+            "example": 4,
+            "nullable": true
+          },
+          "amazon": {
+            "nullable": true,
+            "description": "Tylko dla platformy typu AMAZON. null = usunięcie danych Amazona.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AmazonDetailsInputDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sku"
+        ]
+      },
+      "ImportPackagesDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "example": 1
+          },
+          "items": {
+            "description": "Wiersze w kolejności z pliku",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportPackageItemDto"
+            }
+          },
+          "reorder": {
+            "type": "boolean",
+            "description": "Ustawić kolejność pakietów jak w pliku (domyślnie tak)",
+            "default": true
+          }
+        },
+        "required": [
+          "platformId",
+          "items"
+        ]
+      },
+      "ImportPackagesResultDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "description": "Ile pakietów dodano"
+          },
+          "updated": {
+            "type": "number",
+            "description": "Ile istniejących pakietów zmieniono"
+          }
+        },
+        "required": [
+          "created",
+          "updated"
+        ]
+      },
+      "ReorderPackagesDto": {
+        "type": "object",
+        "properties": {
+          "platformId": {
+            "type": "number",
+            "example": 1
+          },
+          "ids": {
+            "example": [
+              3,
+              1,
+              2
+            ],
+            "description": "Id pakietów platformy w nowej kolejności",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "platformId",
+          "ids"
+        ]
+      },
       "UpdatePackageDto": {
         "type": "object",
         "properties": {
@@ -3519,54 +3869,6 @@
                 "$ref": "#/components/schemas/AmazonDetailsInputDto"
               }
             ]
-          }
-        }
-      },
-      "FbaFeeInputDto": {
-        "type": "object",
-        "properties": {
-          "marketplace": {
-            "example": "DE",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Marketplace"
-              }
-            ]
-          },
-          "feeNet": {
-            "type": "number",
-            "description": "Opłata FBA netto w walucie rynku",
-            "example": 2.82,
-            "nullable": true
-          }
-        },
-        "required": [
-          "marketplace",
-          "feeNet"
-        ]
-      },
-      "PackagePricingInputDto": {
-        "type": "object",
-        "properties": {
-          "markupEur": {
-            "type": "number",
-            "description": "Narzut w EUR netto",
-            "example": 10,
-            "nullable": true
-          },
-          "referralFeePercent": {
-            "type": "number",
-            "description": "Referral fee w % od ceny sprzedaży",
-            "example": 15,
-            "nullable": true,
-            "maximum": 99
-          },
-          "fbaFees": {
-            "description": "Opłaty FBA – tylko zmieniane kraje",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FbaFeeInputDto"
-            }
           }
         }
       },
@@ -3631,6 +3933,110 @@
         "required": [
           "deleted",
           "failed"
+        ]
+      },
+      "MarketPricingInputDto": {
+        "type": "object",
+        "properties": {
+          "marketplace": {
+            "example": "DE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Marketplace"
+              }
+            ]
+          },
+          "markup": {
+            "type": "number",
+            "description": "Narzut netto w walucie rynku",
+            "example": 10,
+            "nullable": true
+          },
+          "referralFeePercent": {
+            "type": "number",
+            "description": "Referral fee w % od ceny sprzedaży",
+            "example": 15,
+            "nullable": true,
+            "maximum": 99
+          },
+          "fbaFeeNet": {
+            "type": "number",
+            "description": "Opłata FBA netto w walucie rynku",
+            "example": 2.82,
+            "nullable": true
+          },
+          "checkPrice": {
+            "type": "number",
+            "description": "Cena do sprawdzenia brutto w walucie rynku (ekran „Sprawdzenie cen”)",
+            "example": 19.99,
+            "nullable": true
+          },
+          "msrpPercent": {
+            "type": "number",
+            "description": "Narzut MSRP w % – MSRP = cena × (1 + %) (ekran „Cena finalna”)",
+            "example": 15,
+            "nullable": true,
+            "maximum": 1000
+          },
+          "quantityDiscountPercent": {
+            "type": "number",
+            "description": "Rabat ilościowy w % (ekran „Cena finalna”)",
+            "example": 5,
+            "nullable": true,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "marketplace"
+        ]
+      },
+      "AmazonPricingItemDto": {
+        "type": "object",
+        "properties": {
+          "markets": {
+            "description": "Zmieniane rynki – ekran wysyła jeden, import może kilka",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketPricingInputDto"
+            }
+          },
+          "id": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "markets",
+          "id"
+        ]
+      },
+      "UpdateAmazonPricingManyDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AmazonPricingItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AmazonPricingInputDto": {
+        "type": "object",
+        "properties": {
+          "markets": {
+            "description": "Zmieniane rynki – ekran wysyła jeden, import może kilka",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketPricingInputDto"
+            }
+          }
+        },
+        "required": [
+          "markets"
         ]
       },
       "PackingListSummaryDto": {

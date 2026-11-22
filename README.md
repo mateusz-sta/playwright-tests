@@ -45,7 +45,7 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 
 - Tests talk only to page objects – no `page.goto`, raw selectors or `process.env` in test files.
 - Locators and actions live in page objects; checks are `expect*` methods (e.g. `loginPage.expectError()`).
-- When you add a new `expect*` method, add its name to `assertFunctionNames` in `eslint.config.mjs`.
+- ESLint treats page object methods named `expect*` as assertions (`assertFunctionPatterns` in `eslint.config.mjs`).
 
 ### API test conventions:
 

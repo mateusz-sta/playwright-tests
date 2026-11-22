@@ -40,7 +40,8 @@ test.describe('API: packing lists', () => {
     api = await createAuthorizedContext(playwright.request, getTestUser());
     packingLists = new PackingListsApi(api);
     // Package = 100 pcs of the product.
-    catalog = await createCatalog(api, { withPackage: true });
+    // Packing lists and shipments exist only for Amazon platforms.
+    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
     pkg = catalog.pkg as Package;
   });
 
@@ -158,5 +159,25 @@ test.describe('API: packing lists', () => {
     expect(response.status()).toBe(204);
     expect((await packingLists.get(list.id)).status()).toBe(404);
     expect(await reservationFor(catalog.product.id)).toBeUndefined();
+  });
+
+  test('POST /api/packing-lists rejects a platform that is not Amazon', async () => {
+    const other = await createCatalog(api, { withPackage: true });
+    try {
+      const response = await packingLists.create({
+        platformId: other.platform.id,
+        name: `${TEST_PREFIX} invalid`,
+        date: today(),
+        items: [{ packageId: (other.pkg as Package).id, packageCount: 1 }],
+      });
+
+      expect(response.status()).toBe(400);
+      await expect(response.json()).resolves.toHaveProperty(
+        'message',
+        'Listy pakowania są tylko dla platform typu Amazon',
+      );
+    } finally {
+      await deleteCatalog(api, other);
+    }
   });
 });

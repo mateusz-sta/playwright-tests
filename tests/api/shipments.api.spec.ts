@@ -46,7 +46,8 @@ test.describe('API: shipments', () => {
     documents = new DocumentsApi(api);
     products = new ProductsApi(api);
     // Package = 100 pcs, 450 g. Stock: 500 pcs = 5 packages.
-    catalog = await createCatalog(api, { withPackage: true });
+    // Packing lists and shipments exist only for Amazon platforms.
+    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
     pkg = catalog.pkg as Package;
     receipt = await readCreated<Document>(
       await documents.create({
@@ -173,5 +174,29 @@ test.describe('API: shipments', () => {
       404,
     );
     expect(await productStock()).toBe(500);
+  });
+
+  test('POST /api/shipments rejects a platform that is not Amazon', async () => {
+    const other = await createCatalog(api, { withPackage: true });
+    try {
+      const response = await shipments.create({
+        platformId: other.platform.id,
+        name: `PW${uniqueId().slice(-8)}`,
+        date: today(),
+        boxes: [
+          {
+            items: [{ packageId: (other.pkg as Package).id, packageCount: 1 }],
+          },
+        ],
+      });
+
+      expect(response.status()).toBe(400);
+      await expect(response.json()).resolves.toHaveProperty(
+        'message',
+        'Wysyłki są tylko dla platform typu Amazon (FBA)',
+      );
+    } finally {
+      await deleteCatalog(api, other);
+    }
   });
 });
