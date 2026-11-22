@@ -4,6 +4,17 @@ import { CreateUserPage } from '../pages/CreateUserPage';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
 import { ProductsPage } from '../pages/ProductsPage';
+import { DocumentDetailsPage } from '../pages/documents/DocumentDetailsPage';
+import { IssueFormPage } from '../pages/documents/IssueFormPage';
+import { ReceiptFormPage } from '../pages/documents/ReceiptFormPage';
+import { PackageFormPage } from '../pages/packages/PackageFormPage';
+import { PackagesListPage } from '../pages/packages/PackagesListPage';
+import { PackingListDetailsPage } from '../pages/packing/PackingListDetailsPage';
+import { PackingListFormPage } from '../pages/packing/PackingListFormPage';
+import { ProductDetailsPage } from '../pages/products/ProductDetailsPage';
+import { ProductFormPage } from '../pages/products/ProductFormPage';
+import { ShipmentDetailsPage } from '../pages/shipments/ShipmentDetailsPage';
+import { ShipmentFormPage } from '../pages/shipments/ShipmentFormPage';
 import {
   MatcherReturnType,
   test as base,
@@ -15,6 +26,17 @@ type Pages = {
   loginPage: LoginPage;
   productsPage: ProductsPage;
   createUserPage: CreateUserPage;
+  productFormPage: ProductFormPage;
+  productDetailsPage: ProductDetailsPage;
+  receiptFormPage: ReceiptFormPage;
+  issueFormPage: IssueFormPage;
+  documentDetailsPage: DocumentDetailsPage;
+  packageFormPage: PackageFormPage;
+  packagesListPage: PackagesListPage;
+  packingListFormPage: PackingListFormPage;
+  packingListDetailsPage: PackingListDetailsPage;
+  shipmentFormPage: ShipmentFormPage;
+  shipmentDetailsPage: ShipmentDetailsPage;
 };
 
 type ApiClients = {
@@ -33,6 +55,39 @@ export const test = base.extend<Pages & ApiClients>({
   },
   createUserPage: async ({ page }, use) => {
     await use(new CreateUserPage(page));
+  },
+  productFormPage: async ({ page }, use) => {
+    await use(new ProductFormPage(page));
+  },
+  productDetailsPage: async ({ page }, use) => {
+    await use(new ProductDetailsPage(page));
+  },
+  receiptFormPage: async ({ page }, use) => {
+    await use(new ReceiptFormPage(page));
+  },
+  issueFormPage: async ({ page }, use) => {
+    await use(new IssueFormPage(page));
+  },
+  documentDetailsPage: async ({ page }, use) => {
+    await use(new DocumentDetailsPage(page));
+  },
+  packageFormPage: async ({ page }, use) => {
+    await use(new PackageFormPage(page));
+  },
+  packagesListPage: async ({ page }, use) => {
+    await use(new PackagesListPage(page));
+  },
+  packingListFormPage: async ({ page }, use) => {
+    await use(new PackingListFormPage(page));
+  },
+  packingListDetailsPage: async ({ page }, use) => {
+    await use(new PackingListDetailsPage(page));
+  },
+  shipmentFormPage: async ({ page }, use) => {
+    await use(new ShipmentFormPage(page));
+  },
+  shipmentDetailsPage: async ({ page }, use) => {
+    await use(new ShipmentDetailsPage(page));
   },
   authApi: async ({ request }, use) => {
     await use(new AuthApi(request));

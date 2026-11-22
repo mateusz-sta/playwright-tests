@@ -60,18 +60,10 @@ export default [
     files: ['tests/**/*.ts'],
     rules: {
       'playwright/no-nested-step': 'off',
-      // Page object methods that contain assertions; add new expect* methods here.
+      // Page object methods named expect* (e.g. loginPage.expectError()) contain assertions.
       'playwright/expect-expect': [
         'warn',
-        {
-          assertFunctionNames: [
-            'expectToBeOpened',
-            'expectTitle',
-            'expectError',
-            'expectRedirectedFrom',
-            'expectLoggedInAs',
-          ],
-        },
+        { assertFunctionPatterns: ['^expect[A-Z]'] },
       ],
     },
     settings: {
