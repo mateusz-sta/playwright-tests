@@ -29,13 +29,19 @@ export class LineItemInput {
   }
 
   async add(value: string, quantity: number): Promise<void> {
-    await this.picker.fill(value);
     if (this.mode === 'suggest') {
-      // Suggestions are loaded from the API (slow on a cold app) – wait before picking.
-      await expect(this.options.filter({ hasText: value }).first()).toBeVisible(
-        { timeout: 15_000 },
-      );
+      // Suggestions come from the API. Sometimes (e.g. right after "+ Pudełko")
+      // the list does not open for the typed text – then clear and type again.
+      await expect(async () => {
+        await this.picker.fill('');
+        await this.picker.fill(value);
+        await expect(
+          this.options.filter({ hasText: value }).first(),
+        ).toBeVisible({ timeout: 5_000 });
+      }).toPass({ timeout: 30_000 });
       await this.picker.press('Enter');
+    } else {
+      await this.picker.fill(value);
     }
     await this.quantity.fill(String(quantity));
     await this.addButton.click();
