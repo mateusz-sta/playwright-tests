@@ -38,6 +38,18 @@ export class LoginPage extends BasePage {
     await expect(this.errorAlert).toHaveText(message);
   }
 
+  // The session is really gone (the app keeps it in localStorage) and the
+  // login page stays open – not only shown for a moment.
+  async expectToStayLoggedOut(): Promise<void> {
+    await expect
+      .poll(() =>
+        this.page.evaluate(() => localStorage.getItem('magazyn.session')),
+      )
+      .toBeNull();
+    await expect(this.page).toHaveURL(/\/login(\?.*)?$/);
+    await expect(this.heading).toBeVisible();
+  }
+
   async expectRedirectedFrom(path: string): Promise<void> {
     await expect(this.page).toHaveURL(
       `${this.path}?returnUrl=${encodeURIComponent(path)}`,

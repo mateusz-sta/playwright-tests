@@ -17,6 +17,18 @@ export abstract class AuthenticatedPage extends BasePage {
     await this.page.context().storageState({ path });
   }
 
+  // Makes the saved session look `minutes` old (its issuedAt) before the next
+  // page load – the app then extends it on the next user activity.
+  async makeSessionOlder(minutes: number): Promise<void> {
+    await this.page.addInitScript((ageMs) => {
+      const raw = localStorage.getItem('magazyn.session');
+      if (!raw) return;
+      const session = JSON.parse(raw);
+      session.issuedAt = Date.now() - ageMs;
+      localStorage.setItem('magazyn.session', JSON.stringify(session));
+    }, minutes * 60_000);
+  }
+
   // Opens the page and lets the app extend an older session first.
   // User activity (e.g. a key press or the "Wyloguj" click) with a token older
   // than a few minutes sends POST /api/auth/refresh. If that happens on the
