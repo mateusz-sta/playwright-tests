@@ -28,8 +28,9 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - `tests/account.setup.ts` – runs first: waits for the app (it sleeps after ~15 min without traffic, see
   `utils/waitForApp.ts`), checks that the test user can log in and, if the user does not exist
   (e.g. after a database reset), creates it with the admin account. When it fails, UI and API tests do not run.
-- `tests/auth.setup.ts` – logs in once before the tests and saves the session to `playwright/.auth/user.json`;
-  all tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
+- `tests/auth.setup.ts` – **the only UI test that logs in** (valid credentials). Runs before all UI tests and saves the
+  session to `playwright/.auth/user.json` (the app keeps it in localStorage, `storageState` stores cookies and localStorage);
+  all UI tests start logged in. To start logged out, use `test.use({ storageState: { cookies: [], origins: [] } })`.
 - `pages/` – Page Objects; one class per page. Pages extend `BasePage` (`open()`, `expectToBeOpened()`),
   pages available after logging in extend `AuthenticatedPage` (adds `header`).
 - `components/` – parts shared by many pages, e.g. `Header` (logged-in user, logout).
