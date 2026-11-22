@@ -40,10 +40,18 @@ export class LineItemInput {
         ).toBeVisible({ timeout: 5_000 });
       }).toPass({ timeout: 30_000 });
       await this.picker.press('Enter');
+      await this.quantity.fill(String(quantity));
+      await this.addButton.click();
     } else {
-      await this.picker.fill(value);
+      // The typed value is checked against products/packages loaded from the API.
+      // Before they load the app rejects it ("Wybierz … z listy") – then try again.
+      // An accepted item is added to the list and the picker is cleared.
+      await expect(async () => {
+        await this.picker.fill(value);
+        await this.quantity.fill(String(quantity));
+        await this.addButton.click();
+        await expect(this.picker).toHaveValue('', { timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
     }
-    await this.quantity.fill(String(quantity));
-    await this.addButton.click();
   }
 }

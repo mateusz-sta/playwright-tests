@@ -51,6 +51,12 @@ export class ProductFormPage extends AuthenticatedPage {
     return this;
   }
 
+  // Switches the page object to the "Nowy produkt" form.
+  forNewProduct(): this {
+    this.productId = undefined;
+    return this;
+  }
+
   // Waits until the edit form shows the product loaded from the API.
   async open(): Promise<void> {
     await super.open();

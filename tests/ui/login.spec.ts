@@ -1,4 +1,5 @@
 import { test } from '../../fixtures/fixtures';
+import { MESSAGES, OLD_SESSION_MINUTES } from '../../test-data/ui';
 import { getTestUser } from '../../test-data/users';
 
 // Logging in with valid credentials is tested once, in tests/auth.setup.ts.
@@ -13,7 +14,7 @@ test.describe('Login as a guest', () => {
 
     await loginPage.login(getTestUser().username, 'wrong-password');
 
-    await loginPage.expectError('Nieprawidłowe hasło');
+    await loginPage.expectError(MESSAGES.wrongPassword);
     await loginPage.expectToBeOpened();
   });
 
@@ -48,7 +49,7 @@ test.describe('Logout', () => {
     loginPage,
   }) => {
     test.fail(true, 'Bug: logout races with the session refresh');
-    await productsPage.makeSessionOlder(10);
+    await productsPage.makeSessionOlder(OLD_SESSION_MINUTES);
     await productsPage.open();
     await productsPage.expectToBeOpened();
 
