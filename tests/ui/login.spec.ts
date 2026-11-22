@@ -31,8 +31,7 @@ test.describe('Logout', () => {
   // Uses the saved session. Logging out only clears this browser context,
   // so other tests keep their session.
   test('user logs out', async ({ productsPage, loginPage }) => {
-    await productsPage.open();
-    await productsPage.expectToBeOpened();
+    await productsPage.openAndRefreshSession();
 
     await productsPage.header.logout();
 
