@@ -78,7 +78,7 @@ test.describe('Packing lists and shipments', () => {
   }) => {
     const name = `${TEST_PREFIX} list ${uniqueId()}`;
     await packingListFormPage.forPlatform(catalog.platform.id).open();
-    await packingListFormPage.nameInput.fill(name);
+    await packingListFormPage.setName(name);
 
     await packingListFormPage.addPackage(pkg.sku, 2);
     await packingListFormPage.expectLine(pkg.sku, '200 szt.', '500 szt.');

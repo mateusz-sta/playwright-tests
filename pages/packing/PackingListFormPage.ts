@@ -35,6 +35,11 @@ export class PackingListFormPage extends AuthenticatedPage {
     return this;
   }
 
+  // The form suggests a name ("Lista <platform> <date>"); this replaces it.
+  async setName(name: string): Promise<void> {
+    await this.nameInput.fill(name);
+  }
+
   async addPackage(sku: string, count: number): Promise<void> {
     await this.lines.add(sku, count);
   }

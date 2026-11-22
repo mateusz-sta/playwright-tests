@@ -10,4 +10,10 @@ export abstract class AuthenticatedPage extends BasePage {
     super(page);
     this.header = new Header(page);
   }
+
+  // Saves the logged-in session (cookies + localStorage – the app keeps its
+  // session in localStorage) so other tests can start already logged in.
+  async saveSession(path: string): Promise<void> {
+    await this.page.context().storageState({ path });
+  }
 }
