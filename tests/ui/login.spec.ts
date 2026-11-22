@@ -37,4 +37,24 @@ test.describe('Logout', () => {
 
     await loginPage.expectToBeOpened();
   });
+
+  // Known bug: with a session older than a few minutes the "Wyloguj" click
+  // also triggers POST /api/auth/refresh; the refresh finishes first and
+  // restores the session, so the user stays logged in (/login → /products).
+  // When it is fixed, this test starts passing and Playwright reports it –
+  // then remove test.fail().
+  test('user logs out right away with an older session', async ({
+    productsPage,
+    loginPage,
+  }) => {
+    test.fail(true, 'Bug: logout races with the session refresh');
+    await productsPage.makeSessionOlder(10);
+    await productsPage.open();
+    await productsPage.expectToBeOpened();
+
+    await productsPage.header.logout();
+
+    await loginPage.expectToBeOpened();
+    await loginPage.expectToStayLoggedOut();
+  });
 });
