@@ -1,7 +1,8 @@
 import {
+  AmazonPricingInput,
   CreatePackageRequest,
   DeleteManyRequest,
-  PackagePricingInput,
+  UpdateAmazonPricingManyRequest,
   UpdatePackageRequest,
 } from './types';
 import { APIRequestContext, APIResponse } from '@playwright/test';
@@ -29,11 +30,21 @@ export class PackagesApi {
     return this.request.patch(`/api/packages/${id}`, { data: body });
   }
 
-  async updatePricing(
+  // Price components per Amazon market (only packages of an AMAZON platform).
+  async updateAmazonPricing(
     id: number,
-    body: PackagePricingInput,
+    body: AmazonPricingInput,
   ): Promise<APIResponse> {
-    return this.request.put(`/api/packages/${id}/pricing`, { data: body });
+    return this.request.put(`/api/packages/${id}/amazon/pricing`, {
+      data: body,
+    });
+  }
+
+  // Many packages at once (Excel import) – all or nothing.
+  async updateAmazonPricingMany(
+    body: UpdateAmazonPricingManyRequest,
+  ): Promise<APIResponse> {
+    return this.request.put('/api/packages/amazon/pricing', { data: body });
   }
 
   async delete(id: number): Promise<APIResponse> {

@@ -53,6 +53,9 @@ test.describe('API: products', () => {
         netUnitPrice: 0.0425,
         grossUnitPrice: 0.05228,
         stock: 0,
+        // No group set by hand – the app derives it from the symbol.
+        groupCode: null,
+        groupName: null,
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
