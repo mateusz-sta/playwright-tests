@@ -1,113 +1,67 @@
-import { DocumentsApi } from '../../api/DocumentsApi';
-import { PackagesApi } from '../../api/PackagesApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import { Package } from '../../api/types';
 import { test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-  readCreated,
-} from '../../test-data/catalog';
-import { today } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
-
-let api: APIRequestContext;
-let packagesApi: PackagesApi;
-let documents: DocumentsApi;
-// Amazon platform + product (no package)
-let catalog: Catalog;
-const packageIds: number[] = [];
-const documentIds: number[] = [];
+import { AMAZON_PACKAGE, pak } from '../../test-data/ui';
 
 test.describe('Packages', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    packagesApi = new PackagesApi(api);
-    documents = new DocumentsApi(api);
-    catalog = await createCatalog(api, { withPackage: false, kind: 'AMAZON' });
-  });
-
-  test.afterAll(async () => {
-    if (!api) return;
-    for (const id of documentIds) {
-      await deleteIgnoringMissing(await documents.delete(id));
-    }
-    for (const id of packageIds) {
-      await deleteIgnoringMissing(await packagesApi.delete(id));
-    }
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('user adds an Amazon package with suggested name and SKU', async ({
+  test('package form suggests name and SKU and enables the code after choosing its type', async ({
     packageFormPage,
-    packagesListPage,
+    testData,
   }) => {
-    const { product, platform } = catalog;
+    const platform = await testData.platform('AMAZON');
+    const product = await testData.product();
     await packageFormPage.forPlatform(platform.id).open();
     await packageFormPage.expectCodeInputDisabledUntilTypeChosen();
 
-    await packageFormPage.fillForm({ product: product.symbol, quantity: 50 });
-    await packageFormPage.expectSuggestedNameAndSku(
-      `${product.name} – 50 szt.`,
-      `${product.symbol}-50`,
-    );
     await packageFormPage.fillForm({
-      weightG: 250,
-      asin: 'B0C7654321',
-      fnsku: 'X00PWTEST1',
-      codeType: 'EAN',
-      code: '5901234123457',
+      product: product.symbol,
+      quantity: AMAZON_PACKAGE.quantity,
     });
-    await packageFormPage.save();
 
-    await packagesListPage.forPlatform(platform.id).expectToBeOpened();
-    const sku = `${product.symbol}-50`;
-    const saved: Package[] = await (
-      await packagesApi.list({ productId: product.id })
-    ).json();
-    packageIds.push(...saved.map((p) => p.id));
-    await packagesListPage.search(sku);
+    await packageFormPage.expectSuggestedNameAndSku(
+      `${product.name} – ${AMAZON_PACKAGE.quantity} szt.`,
+      `${product.symbol}-${AMAZON_PACKAGE.quantity}`,
+    );
+  });
+
+  test('user adds an Amazon package and finds it on the list', async ({
+    packageSteps,
+    packagesListPage,
+    testData,
+  }) => {
+    const platform = await testData.platform('AMAZON');
+    const product = await testData.product();
+    const sku = `${product.symbol}-${AMAZON_PACKAGE.quantity}`;
+
+    await packageSteps.addPackage(platform.id, {
+      product: product.symbol,
+      quantity: AMAZON_PACKAGE.quantity,
+      weightG: AMAZON_PACKAGE.weightG,
+      asin: AMAZON_PACKAGE.asin,
+      fnsku: AMAZON_PACKAGE.fnsku,
+      codeType: 'EAN',
+      code: AMAZON_PACKAGE.ean,
+    });
+    await packageSteps.searchList(platform.id, sku);
+
     await packagesListPage.expectRow(sku, [
-      'B0C7654321',
-      'X00PWTEST1',
-      '5901234123457',
-      '250 g',
-      '0 pak.',
+      AMAZON_PACKAGE.asin,
+      AMAZON_PACKAGE.fnsku,
+      AMAZON_PACKAGE.ean,
+      `${AMAZON_PACKAGE.weightG} g`,
+      pak(0),
     ]);
   });
 
   test('a package with available stock cannot be deleted', async ({
+    packageSteps,
     packageFormPage,
+    testData,
   }) => {
-    const pkg = await readCreated<Package>(
-      await packagesApi.create({
-        platformId: catalog.platform.id,
-        productId: catalog.product.id,
-        name: `${catalog.product.name} – 100 szt.`,
-        sku: `${catalog.product.symbol}-100`,
-        quantity: 100,
-      }),
-      'package',
-    );
-    packageIds.push(pkg.id);
-    documentIds.push(
-      (
-        await readCreated<{ id: number }>(
-          await documents.create({
-            type: 'IN',
-            date: today(),
-            lines: [{ productId: catalog.product.id, quantity: 200 }],
-          }),
-          'receipt',
-        )
-      ).id,
-    );
+    const { platform, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+      stock: AMAZON_PACKAGE.stockForTwoPackages,
+    });
 
-    await packageFormPage.forPackage(catalog.platform.id, pkg.id).open();
+    await packageSteps.openEditForm(platform.id, pkg.id);
 
     await packageFormPage.expectDeleteBlocked(2);
   });

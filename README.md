@@ -39,7 +39,9 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
   `types.ts` with request/response interfaces from the [API docs](https://magazyn-test.onrender.com/api/docs)
   and `apiContext.ts` with `createAuthorizedContext()`.
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
-- `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`.
+- `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`; `ui.ts` holds all values and texts
+  the UI tests expect; `UiTestData.ts` creates and cleans up data for one UI test.
+- `steps/` – multi-step UI flows built from page objects, e.g. `productSteps.addProduct()`, `documentSteps.receive()`.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
 
 ### Page Object Model conventions:
@@ -47,6 +49,17 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - Tests talk only to page objects – no `page.goto`, raw selectors or `process.env` in test files.
 - Locators and actions live in page objects; checks are `expect*` methods (e.g. `loginPage.expectError()`).
 - ESLint treats page object methods named `expect*` as assertions (`assertFunctionPatterns` in `eslint.config.mjs`).
+
+### UI test layers (change things in one place, not in every test):
+
+| Layer            | Where                                          | What                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page objects     | `pages/`, `components/`                        | locators and single-page actions/checks                                                                                                                                                 |
+| Steps            | `steps/`                                       | multi-step flows, e.g. fill a form, save, return the new id                                                                                                                             |
+| Test data        | `testData` fixture (`test-data/UiTestData.ts`) | data created through the API before the test (`testData.catalog({ stock: 500 })`); everything gets a unique prefix and is deleted after the test – also what the test created in the UI |
+| Values and texts | `test-data/ui.ts`                              | prices, quantities, messages, text builders such as `pcs(250)` → `"250 szt."`                                                                                                           |
+
+UI tests contain only the scenario and the checks – no API calls, `beforeAll`/`afterAll` or literal values.
 
 ### API test conventions:
 

@@ -1,127 +1,93 @@
-import { ProductsApi } from '../../api/ProductsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import { Product } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import { readCreated } from '../../test-data/catalog';
-import { TEST_PREFIX, buildProduct, uniqueId } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
-
-// 42.50 zł net per 1000 pcs, VAT 23%
-const PRICES = {
-  per1000Net: '42,50 zł',
-  per1000Gross: '52,28 zł',
-  unitNet: '0,0425 zł',
-  unitGross: '0,05228 zł',
-};
-
-let api: APIRequestContext;
-let products: ProductsApi;
-const productIds: number[] = [];
-
-async function createProduct(): Promise<Product> {
-  const product = await readCreated<Product>(
-    await products.create(buildProduct()),
-    'product',
-  );
-  productIds.push(product.id);
-  return product;
-}
+import { MESSAGES, PRODUCT, PRODUCT_UPDATE, pcs } from '../../test-data/ui';
 
 test.describe('Products', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    products = new ProductsApi(api);
-  });
-
-  test.afterAll(async () => {
-    if (!api) return;
-    await products.deleteBulk({ ids: productIds });
-    await api.dispose();
-  });
-
-  test('user adds a product, sees calculated prices and finds it on the list', async ({
+  test('product form calculates prices while typing', async ({
     productFormPage,
-    productDetailsPage,
-    productsPage,
+    testData,
   }) => {
-    const name = `${TEST_PREFIX} UI product ${uniqueId()}`;
-    const symbol = `${TEST_PREFIX}-${uniqueId()}`;
-    await productFormPage.open();
+    await productFormPage.forNewProduct().open();
 
-    await productFormPage.fillForm({ name, symbol, netPrice: 42.5 });
-    await productFormPage.expectCalculatedPrices(PRICES);
+    await productFormPage.fillForm({
+      name: testData.name('product'),
+      symbol: testData.symbol(),
+      netPrice: PRODUCT.netPrice,
+    });
+    await productFormPage.expectCalculatedPrices(PRODUCT.prices);
 
     // Price per 1 pc is converted, calculated prices stay the same.
     await productFormPage.fillForm({ priceUnit: 'za 1 szt.' });
-    await productFormPage.expectNetPrice('0.0425');
-    await productFormPage.expectCalculatedPrices(PRICES);
+    await productFormPage.expectNetPrice(PRODUCT.netPricePerUnit);
+    await productFormPage.expectCalculatedPrices(PRODUCT.prices);
+  });
 
-    await productFormPage.save();
-    productIds.push(await productDetailsPage.rememberIdFromUrl());
+  test('user adds a product and finds it on the list', async ({
+    productSteps,
+    productDetailsPage,
+    productsPage,
+    testData,
+  }) => {
+    const name = testData.name('product');
+    const symbol = testData.symbol();
+
+    await productSteps.addProduct({ name, symbol, netPrice: PRODUCT.netPrice });
+
     await productDetailsPage.expectProduct(name, symbol);
-    await productDetailsPage.expectStock('0 szt.');
-    await productDetailsPage.expectPrices(PRICES);
+    await productDetailsPage.expectStock(pcs(0));
+    await productDetailsPage.expectPrices(PRODUCT.prices);
 
-    await productsPage.open();
-    await productsPage.search(symbol);
+    await productSteps.searchList(symbol);
+
     await productsPage.expectResults(1);
     await productsPage.expectRow(symbol, [
       name,
-      '42,50 zł',
-      '52,28 zł',
-      '0 szt.',
+      PRODUCT.prices.per1000Net,
+      PRODUCT.prices.per1000Gross,
+      pcs(0),
     ]);
   });
 
   test('user cannot add a product with a symbol that is already used', async ({
+    productSteps,
     productFormPage,
+    testData,
   }) => {
-    const existing = await createProduct();
-    await productFormPage.open();
+    const existing = await testData.product();
 
-    await productFormPage.fillForm({
-      name: 'Duplicate',
+    await productSteps.submitNewProduct({
+      name: testData.name('duplicate'),
       symbol: existing.symbol,
     });
-    await productFormPage.save();
 
-    await productFormPage.expectError(
-      `Symbol ${existing.symbol} jest już zajęty`,
-    );
+    await productFormPage.expectError(MESSAGES.symbolTaken(existing.symbol));
     await productFormPage.expectToBeOpened();
   });
 
   test('user changes price and VAT, and prices are recalculated', async ({
-    productFormPage,
+    productSteps,
     productDetailsPage,
+    testData,
   }) => {
-    const product = await createProduct();
-    await productFormPage.forProduct(product.id).open();
+    const product = await testData.product();
 
-    await productFormPage.fillForm({ netPrice: 20, vatRate: '5%' });
-    await productFormPage.save();
-
-    await productDetailsPage.forProduct(product.id).expectToBeOpened();
-    await productDetailsPage.expectPrices({
-      per1000Net: '20,00 zł',
-      per1000Gross: '21,00 zł',
-      unitNet: '0,02 zł',
-      unitGross: '0,021 zł',
+    await productSteps.editProduct(product.id, {
+      netPrice: PRODUCT_UPDATE.netPrice,
+      vatRate: PRODUCT_UPDATE.vatRate,
     });
+
+    await productDetailsPage.expectPrices(PRODUCT_UPDATE.prices);
   });
 
   test('user deletes a product', async ({
-    productDetailsPage,
+    productSteps,
     productsPage,
+    testData,
   }) => {
-    const product = await createProduct();
-    await productDetailsPage.forProduct(product.id).open();
-    await productDetailsPage.expectProduct(product.name, product.symbol);
+    const product = await testData.product();
 
-    await productDetailsPage.delete(product.name);
+    await productSteps.deleteProduct(product.id, product.name);
 
     await productsPage.expectToBeOpened();
-    expect((await products.get(product.id)).status()).toBe(404);
+    await expect.poll(() => testData.productExists(product)).toBe(false);
   });
 });
