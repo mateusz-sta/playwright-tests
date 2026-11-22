@@ -1,5 +1,5 @@
 import { AuthApi } from '../api/AuthApi';
-import { createAuthorizedContext } from '../api/apiContext';
+import { createContextFromSavedSession } from '../api/apiContext';
 import { SchemaRef, validateAgainstSchema } from '../api/schemaValidator';
 import { CreateUserPage } from '../pages/CreateUserPage';
 import { HomePage } from '../pages/HomePage';
@@ -21,7 +21,7 @@ import { PackageSteps } from '../steps/PackageSteps';
 import { ProductSteps } from '../steps/ProductSteps';
 import { ShippingSteps } from '../steps/ShippingSteps';
 import { UiTestData } from '../test-data/UiTestData';
-import { getTestUser } from '../test-data/users';
+import { USER_STORAGE_STATE } from '../utils/constants';
 import {
   APIRequestContext,
   MatcherReturnType,
@@ -61,7 +61,8 @@ type UiHelpers = {
 };
 
 type WorkerFixtures = {
-  // One logged-in API context per worker, for test data of UI tests.
+  // One API context per worker, for test data of UI tests. It reuses the
+  // token saved by tests/auth.setup.ts, so it does not log in again.
   workerApi: APIRequestContext;
 };
 
@@ -69,9 +70,9 @@ export const test = base.extend<Pages & ApiClients & UiHelpers, WorkerFixtures>(
   {
     workerApi: [
       async ({ playwright }, use): Promise<void> => {
-        const api = await createAuthorizedContext(
+        const api = await createContextFromSavedSession(
           playwright.request,
-          getTestUser(),
+          USER_STORAGE_STATE,
         );
         await use(api);
         await api.dispose();
