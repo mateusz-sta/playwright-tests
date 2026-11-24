@@ -1,3 +1,4 @@
+import { ApiWorkerOptions } from './fixtures/apiFixtures';
 import { USER_STORAGE_STATE } from './utils/constants';
 import { ReporterDescription, defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
@@ -18,7 +19,7 @@ const allureReporter: ReporterDescription = [
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-export default defineConfig({
+export default defineConfig<object, ApiWorkerOptions>({
   testDir: './tests',
   timeout: 30_000,
   expect: {
@@ -60,11 +61,12 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: USER_STORAGE_STATE,
+        savedSession: USER_STORAGE_STATE,
       },
       dependencies: ['setup'],
     },
     {
-      // API tests: no browser and no saved session, each test gets a token itself.
+      // API tests: no browser and no saved session – each worker logs in once.
       name: 'api',
       testDir: './tests/api',
       dependencies: ['account-setup'],

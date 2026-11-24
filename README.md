@@ -37,10 +37,11 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 - `tests/api/` – API tests (`*.api.spec.ts`), run in the `api` project without a browser.
 - `api/` – API clients, one class per resource (e.g. `AuthApi` for `/api/auth`, `ProductsApi` for `/api/products`),
   `types.ts` with request/response interfaces from the [API docs](https://magazyn-test.onrender.com/api/docs)
-  and `apiContext.ts` with `createAuthorizedContext()`.
-- `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests.
+  and `apiContext.ts` with helpers that create logged-in request contexts.
+- `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests
+  (page objects and steps; API clients and `testData` come from `apiFixtures.ts`).
 - `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`; `ui.ts` holds all values and texts
-  the UI tests expect; `UiTestData.ts` creates and cleans up data for one UI test.
+  the UI tests expect; `TestData.ts` creates and cleans up data of one test (UI and API).
 - `steps/` – multi-step UI flows built from page objects, e.g. `productSteps.addProduct()`, `documentSteps.receive()`.
 - `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
 
@@ -52,23 +53,25 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 
 ### UI test layers (change things in one place, not in every test):
 
-| Layer            | Where                                          | What                                                                                                                                                                                    |
-| ---------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page objects     | `pages/`, `components/`                        | locators and single-page actions/checks                                                                                                                                                 |
-| Steps            | `steps/`                                       | multi-step flows, e.g. fill a form, save, return the new id                                                                                                                             |
-| Test data        | `testData` fixture (`test-data/UiTestData.ts`) | data created through the API before the test (`testData.catalog({ stock: 500 })`); everything gets a unique prefix and is deleted after the test – also what the test created in the UI |
-| Values and texts | `test-data/ui.ts`                              | prices, quantities, messages, text builders such as `pcs(250)` → `"250 szt."`                                                                                                           |
+| Layer            | Where                                        | What                                                                                                                                                                                    |
+| ---------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page objects     | `pages/`, `components/`                      | locators and single-page actions/checks                                                                                                                                                 |
+| Steps            | `steps/`                                     | multi-step flows, e.g. fill a form, save, return the new id                                                                                                                             |
+| Test data        | `testData` fixture (`test-data/TestData.ts`) | data created through the API before the test (`testData.catalog({ stock: 500 })`); everything gets a unique prefix and is deleted after the test – also what the test created in the UI |
+| Values and texts | `test-data/ui.ts`                            | prices, quantities, messages, text builders such as `pcs(250)` → `"250 szt."`                                                                                                           |
 
 UI tests contain only the scenario and the checks – no API calls, `beforeAll`/`afterAll` or literal values.
 
 ### API test conventions:
 
-- Tests call API clients (`AuthApi`, `ProductsApi`, …), never `request.post('/api/...')` directly.
-- Endpoints that need a login get a request context from `createAuthorizedContext()` in `test.beforeAll`
-  (it sends `Authorization: Bearer <token>`); dispose it in `test.afterAll`.
-- Test data comes from `test-data/factories.ts` and is prefixed with `PW-TEST`, so it is easy to spot.
-  Tests that need a platform/product/package use `createCatalog()` / `deleteCatalog()` from `test-data/catalog.ts`.
-- Steps that depend on each other (create → read → update → delete) use `test.describe.configure({ mode: 'serial' })`.
+- Tests call API clients from fixtures (`productsApi`, `ordersApi`, …), never `request.post('/api/...')` directly.
+  The clients are logged in as the test user: one login per worker (UI tests reuse the saved session instead).
+  `authApi` and `request` send no token.
+- Every test is independent: it creates its own data with `testData` (e.g. `testData.catalog({ stock: 500 })`,
+  `testData.shipment(pkg, 2)`), so tests run in any order and in parallel. No `serial` mode, `beforeAll`/`afterAll`
+  or variables shared between tests – one failing test must not skip others.
+- Use names from `testData` in tested requests too (`testData.name()`, `orderName()`, `userRequest()`, …):
+  they are prefixed with `PW-TEST` and deleted after the test, also when it fails.
 - Known bugs are covered with `test.fail()` and a description – when the bug is fixed, the test reports it.
 - Check every successful response against the API docs: `expect(body).toMatchSchema('ProductDto')`
   (`'ProductDto[]'` for lists). Schemas come from `api/openapi.json`, a saved copy of the docs.

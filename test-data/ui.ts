@@ -41,7 +41,7 @@ export const MESSAGES = {
   symbolTaken: (symbol: string): string => `Symbol ${symbol} jest już zajęty`,
 };
 
-// Products created by UiTestData.product() and by the form tests.
+// Products created by TestData.product() and by the form tests.
 export const PRODUCT = {
   netPrice: 42.5, // zł per 1000 pcs, VAT 23%
   netPricePerUnit: '0.0425', // the same price after switching to "za 1 szt."
@@ -65,7 +65,7 @@ export const PRODUCT_UPDATE = {
   } satisfies CalculatedPrices,
 };
 
-// Stock movements. Packages from UiTestData have 100 pcs each and weigh 450 g.
+// Stock movements. Packages from TestData have 100 pcs each and weigh 450 g.
 export const STOCK = {
   received: 250, // receipt test
   initial: 500, // stock before issue / packing / shipment tests

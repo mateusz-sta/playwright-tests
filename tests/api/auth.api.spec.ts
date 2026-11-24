@@ -1,21 +1,10 @@
-import { AuthApi } from '../../api/AuthApi';
 import { CurrentUser, LoginResponse } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
 import { getTestUser } from '../../test-data/users';
-import { requireEnv } from '../../utils/helpers';
 
 const user = getTestUser();
-let token: string;
 
 test.describe('API: auth', () => {
-  test.beforeAll(async ({ playwright }) => {
-    const request = await playwright.request.newContext({
-      baseURL: requireEnv('BASE_URL'),
-    });
-    token = await new AuthApi(request).getToken(user);
-    await request.dispose();
-  });
-
   test.describe('POST /api/auth/login', () => {
     test('returns a token for valid credentials', async ({ authApi }) => {
       const response = await authApi.login(user);
@@ -48,8 +37,8 @@ test.describe('API: auth', () => {
   });
 
   test.describe('GET /api/auth/me', () => {
-    test('returns the logged-in user', async ({ authApi }) => {
-      const response = await authApi.me(token);
+    test('returns the logged-in user', async ({ authApi, workerToken }) => {
+      const response = await authApi.me(workerToken);
 
       expect(response.status()).toBe(200);
       const body: CurrentUser = await response.json();
@@ -76,8 +65,9 @@ test.describe('API: auth', () => {
   test.describe('POST /api/auth/refresh', () => {
     test('returns a new working token for a logged-in user', async ({
       authApi,
+      workerToken,
     }) => {
-      const response = await authApi.refresh(token);
+      const response = await authApi.refresh(workerToken);
 
       expect(response.status()).toBe(200);
       const body: LoginResponse = await response.json();

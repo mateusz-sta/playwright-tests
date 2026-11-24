@@ -4,56 +4,66 @@ import { LoginRequest } from './types';
 import { APIRequest, APIRequestContext } from '@playwright/test';
 import { readFileSync } from 'fs';
 
-// Logs in and returns a request context that sends `Authorization: Bearer <token>`
-// with every request. Use it in test.beforeAll and dispose it in test.afterAll.
-export async function createAuthorizedContext(
+// Request context that sends `Authorization: Bearer <token>` with every request.
+// Dispose it when it is no longer needed.
+export async function createContextWithToken(
   apiRequest: APIRequest,
-  credentials: LoginRequest,
+  token: string,
 ): Promise<APIRequestContext> {
-  const baseURL = requireEnv('BASE_URL');
-
-  const anonymous = await apiRequest.newContext({ baseURL });
-  const token = await new AuthApi(anonymous).getToken(credentials);
-  await anonymous.dispose();
-
   return apiRequest.newContext({
-    baseURL,
+    baseURL: requireEnv('BASE_URL'),
     extraHTTPHeaders: { Authorization: `Bearer ${token}` },
   });
 }
 
-// Returns a request context that reuses the token of a session saved by
-// tests/auth.setup.ts, so the API calls need no login of their own.
-export async function createContextFromSavedSession(
+export async function createAuthorizedContext(
   apiRequest: APIRequest,
-  storageStatePath: string,
+  credentials: LoginRequest,
 ): Promise<APIRequestContext> {
-  const baseURL = requireEnv('BASE_URL');
+  return createContextWithToken(
+    apiRequest,
+    await logIn(apiRequest, credentials),
+  );
+}
 
-  return apiRequest.newContext({
-    baseURL,
-    extraHTTPHeaders: {
-      Authorization: `Bearer ${readSavedToken(storageStatePath)}`,
-    },
+export async function logIn(
+  apiRequest: APIRequest,
+  credentials: LoginRequest,
+): Promise<string> {
+  const anonymous = await apiRequest.newContext({
+    baseURL: requireEnv('BASE_URL'),
   });
+  const token = await new AuthApi(anonymous).getToken(credentials);
+  await anonymous.dispose();
+  return token;
 }
 
 interface StorageState {
   origins: { localStorage: { name: string; value: string }[] }[];
 }
 
+// Token of the session saved by tests/auth.setup.ts – no login needed.
 // The app keeps its session in localStorage under "magazyn.session".
-function readSavedToken(storageStatePath: string): string {
+export function readSavedToken(storageStatePath: string): string {
   const state = JSON.parse(
     readFileSync(storageStatePath, 'utf8'),
   ) as StorageState;
-  const session = state.origins
+  const item = state.origins
     .flatMap((origin) => origin.localStorage)
-    .find((item) => item.name === 'magazyn.session');
-  if (!session) {
+    .find(({ name }) => name === 'magazyn.session');
+  if (!item) {
     throw new Error(
       `No saved session in ${storageStatePath} – run the "setup" project first.`,
     );
   }
-  return (JSON.parse(session.value) as { token: string }).token;
+  const session = JSON.parse(item.value) as {
+    token: string;
+    expiresAt: string;
+  };
+  if (Date.parse(session.expiresAt) <= Date.now()) {
+    throw new Error(
+      `The session in ${storageStatePath} expired at ${session.expiresAt} – run the "setup" project again.`,
+    );
+  }
+  return session.token;
 }

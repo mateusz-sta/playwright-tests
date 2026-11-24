@@ -1,58 +1,28 @@
-import { OrdersApi } from '../../api/OrdersApi';
-import { ProductsApi } from '../../api/ProductsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import { Order, OrderSummary, Package } from '../../api/types';
+import { Order, OrderSummary } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-} from '../../test-data/catalog';
-import { TEST_PREFIX, today, uniqueId } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
+import { today } from '../../test-data/factories';
 
-let api: APIRequestContext;
-let orders: OrdersApi;
-let catalog: Catalog;
-let pkg: Package;
-let order: Order;
-
-test.describe.configure({ mode: 'serial' });
-
+// Orders from testData have 10 pcs of the product and 3 packages of 100 pcs.
 test.describe('API: orders', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    orders = new OrdersApi(api);
-    // Package = 100 pcs of the product.
-    catalog = await createCatalog(api, { withPackage: true });
-    pkg = catalog.pkg as Package;
-  });
+  test('POST /api/orders creates an order with product and package items', async ({
+    ordersApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog();
+    const name = testData.orderName();
 
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    if (order) await deleteIgnoringMissing(await orders.delete(order.id));
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('POST /api/orders creates an order with product and package items', async () => {
-    const name = `${TEST_PREFIX} order ${uniqueId()}`;
-
-    const response = await orders.create({
+    const response = await ordersApi.create({
       name,
       date: today(),
       note: 'Created by API tests',
       items: [
-        { productId: catalog.product.id, quantity: 10 },
+        { productId: product.id, quantity: 10 },
         { packageId: pkg.id, quantity: 3 },
       ],
     });
 
     expect(response.status()).toBe(201);
-    order = await response.json();
+    const order: Order = await response.json();
     expect(order).toMatchSchema('OrderDto');
     expect(order).toMatchObject({
       name,
@@ -60,14 +30,14 @@ test.describe('API: orders', () => {
       items: [
         {
           position: 1,
-          productId: catalog.product.id,
+          productId: product.id,
           unitsPerItem: 1,
           quantity: 10,
           units: 10,
         },
         {
           position: 2,
-          productId: catalog.product.id,
+          productId: product.id,
           packageId: pkg.id,
           sku: pkg.sku,
           unitsPerItem: 100,
@@ -78,21 +48,30 @@ test.describe('API: orders', () => {
     });
   });
 
-  test('orders do not change product stock', async () => {
-    const response = await new ProductsApi(api).get(catalog.product.id);
+  test('orders do not change product stock', async ({ testData }) => {
+    const catalog = await testData.catalog({ stock: 500 });
 
-    await expect(response.json()).resolves.toHaveProperty('stock', 0);
+    await testData.order(catalog);
+
+    expect(await testData.stockOf(catalog.product)).toBe(500);
   });
 
-  test('GET /api/orders/{id} returns the order', async () => {
-    const response = await orders.get(order.id);
+  test('GET /api/orders/{id} returns the order', async ({
+    ordersApi,
+    testData,
+  }) => {
+    const order = await testData.order(await testData.catalog());
+
+    const response = await ordersApi.get(order.id);
 
     expect(response.status()).toBe(200);
     await expect(response.json()).resolves.toEqual(order);
   });
 
-  test('GET /api/orders lists the order', async () => {
-    const response = await orders.list();
+  test('GET /api/orders lists the order', async ({ ordersApi, testData }) => {
+    const order = await testData.order(await testData.catalog());
+
+    const response = await ordersApi.list();
 
     expect(response.status()).toBe(200);
     const body: OrderSummary[] = await response.json();
@@ -102,9 +81,15 @@ test.describe('API: orders', () => {
     );
   });
 
-  test('PUT /api/orders/{id} replaces the items', async () => {
-    const response = await orders.replace(order.id, {
-      items: [{ packageId: pkg.id, quantity: 5 }],
+  test('PUT /api/orders/{id} replaces the items', async ({
+    ordersApi,
+    testData,
+  }) => {
+    const catalog = await testData.catalog();
+    const order = await testData.order(catalog);
+
+    const response = await ordersApi.replace(order.id, {
+      items: [{ packageId: catalog.pkg.id, quantity: 5 }],
     });
 
     expect(response.status()).toBe(200);
@@ -112,24 +97,38 @@ test.describe('API: orders', () => {
     expect(body).toMatchSchema('OrderDto');
     expect(body.itemCount).toBe(1);
     expect(body.items).toEqual([
-      expect.objectContaining({ packageId: pkg.id, quantity: 5, units: 500 }),
+      expect.objectContaining({
+        packageId: catalog.pkg.id,
+        quantity: 5,
+        units: 500,
+      }),
     ]);
   });
 
-  test('POST /api/orders rejects an order without a date', async () => {
-    const response = await orders.create({
-      name: `${TEST_PREFIX} invalid`,
+  test('POST /api/orders rejects an order without a date', async ({
+    ordersApi,
+    testData,
+  }) => {
+    const product = await testData.product();
+
+    const response = await ordersApi.create({
+      name: testData.orderName(),
       date: 'not-a-date',
-      items: [{ productId: catalog.product.id, quantity: 1 }],
+      items: [{ productId: product.id, quantity: 1 }],
     });
 
     expect(response.status()).toBe(400);
   });
 
-  test('DELETE /api/orders/{id} deletes the order', async () => {
-    const response = await orders.delete(order.id);
+  test('DELETE /api/orders/{id} deletes the order', async ({
+    ordersApi,
+    testData,
+  }) => {
+    const order = await testData.order(await testData.catalog());
+
+    const response = await ordersApi.delete(order.id);
 
     expect(response.status()).toBe(204);
-    expect((await orders.get(order.id)).status()).toBe(404);
+    expect((await ordersApi.get(order.id)).status()).toBe(404);
   });
 });

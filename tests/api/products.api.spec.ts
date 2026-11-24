@@ -1,5 +1,3 @@
-import { ProductsApi } from '../../api/ProductsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
 import {
   DeleteProductsResult,
   ErrorResponse,
@@ -7,42 +5,24 @@ import {
   StockMovement,
 } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import { buildProduct } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
-
-const MISSING_ID = 999_999_999;
-
-let api: APIRequestContext;
-let products: ProductsApi;
-const createdIds: number[] = [];
+import { MISSING_ID } from '../../test-data/factories';
 
 test.describe('API: products', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    products = new ProductsApi(api);
-  });
-
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    await products.deleteBulk({ ids: createdIds });
-    await api.dispose();
-  });
-
   test.describe('product lifecycle', () => {
-    test.describe.configure({ mode: 'serial' });
+    test('POST /api/products creates a product and calculates prices', async ({
+      productsApi,
+      testData,
+    }) => {
+      const input = testData.productRequest({
+        netPricePer1000: 42.5,
+        vatRate: 23,
+      });
 
-    const input = buildProduct({ netPricePer1000: 42.5, vatRate: 23 });
-    let product: Product;
-
-    test('POST /api/products creates a product and calculates prices', async () => {
-      const response = await products.create(input);
+      const response = await productsApi.create(input);
 
       expect(response.status()).toBe(201);
-      product = await response.json();
+      const product: Product = await response.json();
       expect(product).toMatchSchema('ProductDto');
-      createdIds.push(product.id);
       expect(product).toEqual({
         id: expect.any(Number),
         name: input.name,
@@ -61,15 +41,25 @@ test.describe('API: products', () => {
       });
     });
 
-    test('GET /api/products/{id} returns the product', async () => {
-      const response = await products.get(product.id);
+    test('GET /api/products/{id} returns the product', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.get(product.id);
 
       expect(response.status()).toBe(200);
       await expect(response.json()).resolves.toEqual(product);
     });
 
-    test('GET /api/products lists the product', async () => {
-      const response = await products.list();
+    test('GET /api/products lists the product', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.list();
 
       expect(response.status()).toBe(200);
       const body: Product[] = await response.json();
@@ -77,8 +67,13 @@ test.describe('API: products', () => {
       expect(body).toContainEqual(product);
     });
 
-    test('PATCH /api/products/{id} updates the price and recalculates it', async () => {
-      const response = await products.update(product.id, {
+    test('PATCH /api/products/{id} updates the price and recalculates it', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.update(product.id, {
         netPricePer1000: 20,
         vatRate: 5,
       });
@@ -95,16 +90,26 @@ test.describe('API: products', () => {
       });
     });
 
-    test('POST /api/products rejects a duplicate symbol', async () => {
-      const response = await products.create(
-        buildProduct({ symbol: input.symbol }),
+    test('POST /api/products rejects a duplicate symbol', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.create(
+        testData.productRequest({ symbol: product.symbol }),
       );
 
       expect(response.status()).toBe(409);
     });
 
-    test('GET /api/products/{id}/movements is empty for a new product', async () => {
-      const response = await products.movements(product.id);
+    test('GET /api/products/{id}/movements is empty for a new product', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.movements(product.id);
 
       expect(response.status()).toBe(200);
       const body: StockMovement[] = await response.json();
@@ -112,17 +117,22 @@ test.describe('API: products', () => {
       expect(body).toEqual([]);
     });
 
-    test('DELETE /api/products/{id} deletes the product', async () => {
-      const response = await products.delete(product.id);
+    test('DELETE /api/products/{id} deletes the product', async ({
+      productsApi,
+      testData,
+    }) => {
+      const product = await testData.product();
+
+      const response = await productsApi.delete(product.id);
 
       expect(response.status()).toBe(204);
-      expect((await products.get(product.id)).status()).toBe(404);
+      expect((await productsApi.get(product.id)).status()).toBe(404);
     });
   });
 
   test.describe('validation', () => {
-    test('POST /api/products rejects invalid data', async () => {
-      const response = await products.create({
+    test('POST /api/products rejects invalid data', async ({ productsApi }) => {
+      const response = await productsApi.create({
         name: '',
         symbol: '',
         netPricePer1000: -1,
@@ -141,31 +151,37 @@ test.describe('API: products', () => {
       );
     });
 
-    test('GET /api/products/{id} returns 404 for a missing product', async () => {
-      const response = await products.get(MISSING_ID);
+    test('GET /api/products/{id} returns 404 for a missing product', async ({
+      productsApi,
+    }) => {
+      const response = await productsApi.get(MISSING_ID);
 
       expect(response.status()).toBe(404);
     });
 
-    test('GET /api/products/{id} returns 400 for a non-numeric id', async () => {
-      const response = await products.get('abc');
+    test('GET /api/products/{id} returns 400 for a non-numeric id', async ({
+      productsApi,
+    }) => {
+      const response = await productsApi.get('abc');
 
       expect(response.status()).toBe(400);
     });
   });
 
   test.describe('bulk operations', () => {
-    test('POST /api/products/bulk creates many and /delete removes them', async () => {
-      const inputs = [buildProduct(), buildProduct()];
+    test('POST /api/products/bulk creates many and /delete removes them', async ({
+      productsApi,
+      testData,
+    }) => {
+      const inputs = [testData.productRequest(), testData.productRequest()];
 
-      const created = await products.createBulk(inputs);
+      const created = await productsApi.createBulk(inputs);
       expect(created.status()).toBe(201);
       const body: Product[] = await created.json();
       expect(body).toMatchSchema('ProductDto[]');
-      createdIds.push(...body.map((p) => p.id));
       expect(body.map((p) => p.symbol)).toEqual(inputs.map((p) => p.symbol));
 
-      const deleted = await products.deleteBulk({
+      const deleted = await productsApi.deleteBulk({
         ids: [...body.map((p) => p.id), MISSING_ID],
       });
       expect(deleted.status()).toBe(200);

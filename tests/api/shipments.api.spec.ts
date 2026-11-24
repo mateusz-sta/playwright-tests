@@ -1,82 +1,22 @@
-import { DocumentsApi } from '../../api/DocumentsApi';
-import { ProductsApi } from '../../api/ProductsApi';
-import { ShipmentsApi } from '../../api/ShipmentsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import {
-  Document,
-  Package,
-  Product,
-  Shipment,
-  ShipmentSummary,
-} from '../../api/types';
+import { Shipment, ShipmentSummary } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-  readCreated,
-} from '../../test-data/catalog';
-import { today, uniqueId } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
+import { today } from '../../test-data/factories';
 
-let api: APIRequestContext;
-let shipments: ShipmentsApi;
-let documents: DocumentsApi;
-let products: ProductsApi;
-let catalog: Catalog;
-let pkg: Package;
-let receipt: Document;
-let shipment: Shipment;
-
-async function productStock(): Promise<number> {
-  const product: Product = await (
-    await products.get(catalog.product.id)
-  ).json();
-  return product.stock;
-}
-
-test.describe.configure({ mode: 'serial' });
-
+// Packages from testData: 100 pcs, 450 g. Stock: 500 pcs = 5 packages.
+// Packing lists and shipments exist only for Amazon platforms.
 test.describe('API: shipments', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    shipments = new ShipmentsApi(api);
-    documents = new DocumentsApi(api);
-    products = new ProductsApi(api);
-    // Package = 100 pcs, 450 g. Stock: 500 pcs = 5 packages.
-    // Packing lists and shipments exist only for Amazon platforms.
-    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
-    pkg = catalog.pkg as Package;
-    receipt = await readCreated<Document>(
-      await documents.create({
-        type: 'IN',
-        date: today(),
-        lines: [{ productId: catalog.product.id, quantity: 500 }],
-      }),
-      'receipt',
-    );
-  });
+  test('POST /api/shipments creates a shipment and issues its packages', async ({
+    shipmentsApi,
+    testData,
+  }) => {
+    const { platform, product, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+      stock: 500,
+    });
+    const name = testData.shipmentName();
 
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    if (shipment)
-      await deleteIgnoringMissing(await shipments.delete(shipment.id));
-    if (receipt) {
-      await deleteIgnoringMissing(await documents.delete(receipt.id));
-    }
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('POST /api/shipments creates a shipment and issues its packages', async () => {
-    // Shipment names are short labels, e.g. R158.
-    const name = `PW${uniqueId().slice(-8)}`;
-
-    const response = await shipments.create({
-      platformId: catalog.platform.id,
+    const response = await shipmentsApi.create({
+      platformId: platform.id,
       name,
       date: today(),
       boxes: [
@@ -91,10 +31,10 @@ test.describe('API: shipments', () => {
     });
 
     expect(response.status()).toBe(201);
-    shipment = await response.json();
+    const shipment: Shipment = await response.json();
     expect(shipment).toMatchSchema('ShipmentDto');
     expect(shipment).toMatchObject({
-      platformId: catalog.platform.id,
+      platformId: platform.id,
       name,
       documentId: expect.any(Number),
       boxCount: 1,
@@ -117,11 +57,17 @@ test.describe('API: shipments', () => {
         },
       ],
     });
-    expect(await productStock()).toBe(300);
+    expect(await testData.stockOf(product)).toBe(300);
   });
 
-  test('the shipment creates an issue (OUT) document', async () => {
-    const response = await documents.get(shipment.documentId as number);
+  test('the shipment creates an issue (OUT) document', async ({
+    documentsApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON', stock: 500 });
+    const shipment = await testData.shipment(pkg, 2);
+
+    const response = await documentsApi.get(shipment.documentId as number);
 
     expect(response.status()).toBe(200);
     expect<unknown>(await response.json()).toMatchSchema('DocumentDto');
@@ -132,8 +78,17 @@ test.describe('API: shipments', () => {
     });
   });
 
-  test('GET /api/shipments filters by platform', async () => {
-    const response = await shipments.list({ platformId: catalog.platform.id });
+  test('GET /api/shipments filters by platform', async ({
+    shipmentsApi,
+    testData,
+  }) => {
+    const { platform, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+      stock: 500,
+    });
+    const shipment = await testData.shipment(pkg, 2);
+
+    const response = await shipmentsApi.list({ platformId: platform.id });
 
     expect(response.status()).toBe(200);
     const body: ShipmentSummary[] = await response.json();
@@ -141,15 +96,30 @@ test.describe('API: shipments', () => {
     expect(body.map((s) => s.id)).toEqual([shipment.id]);
   });
 
-  test('GET /api/shipments/{id} returns the shipment with boxes', async () => {
-    const response = await shipments.get(shipment.id);
+  test('GET /api/shipments/{id} returns the shipment with boxes', async ({
+    shipmentsApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON', stock: 500 });
+    const shipment = await testData.shipment(pkg, 2);
+
+    const response = await shipmentsApi.get(shipment.id);
 
     expect(response.status()).toBe(200);
     await expect(response.json()).resolves.toEqual(shipment);
   });
 
-  test('PUT /api/shipments/{id} replaces boxes and recalculates the issue', async () => {
-    const response = await shipments.replace(shipment.id, {
+  test('PUT /api/shipments/{id} replaces boxes and recalculates the issue', async ({
+    shipmentsApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+      stock: 500,
+    });
+    const shipment = await testData.shipment(pkg, 2);
+
+    const response = await shipmentsApi.replace(shipment.id, {
       boxes: [
         { items: [{ packageId: pkg.id, packageCount: 1 }] },
         { items: [{ packageId: pkg.id, packageCount: 2 }] },
@@ -162,41 +132,47 @@ test.describe('API: shipments', () => {
       boxCount: 2,
       totalPackages: 3,
     });
-    expect(await productStock()).toBe(200);
+    expect(await testData.stockOf(product)).toBe(200);
   });
 
-  test('DELETE /api/shipments/{id} deletes the shipment and returns the stock', async () => {
-    const response = await shipments.delete(shipment.id);
+  test('DELETE /api/shipments/{id} deletes the shipment and returns the stock', async ({
+    documentsApi,
+    shipmentsApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+      stock: 500,
+    });
+    const shipment = await testData.shipment(pkg, 2);
+    expect(await testData.stockOf(product)).toBe(300);
+
+    const response = await shipmentsApi.delete(shipment.id);
 
     expect(response.status()).toBe(204);
-    expect((await shipments.get(shipment.id)).status()).toBe(404);
-    expect((await documents.get(shipment.documentId as number)).status()).toBe(
-      404,
-    );
-    expect(await productStock()).toBe(500);
+    expect((await shipmentsApi.get(shipment.id)).status()).toBe(404);
+    const issue = await documentsApi.get(shipment.documentId as number);
+    expect(issue.status()).toBe(404);
+    expect(await testData.stockOf(product)).toBe(500);
   });
 
-  test('POST /api/shipments rejects a platform that is not Amazon', async () => {
-    const other = await createCatalog(api, { withPackage: true });
-    try {
-      const response = await shipments.create({
-        platformId: other.platform.id,
-        name: `PW${uniqueId().slice(-8)}`,
-        date: today(),
-        boxes: [
-          {
-            items: [{ packageId: (other.pkg as Package).id, packageCount: 1 }],
-          },
-        ],
-      });
+  test('POST /api/shipments rejects a platform that is not Amazon', async ({
+    shipmentsApi,
+    testData,
+  }) => {
+    const { platform, pkg } = await testData.catalog({ kind: 'OTHER' });
 
-      expect(response.status()).toBe(400);
-      await expect(response.json()).resolves.toHaveProperty(
-        'message',
-        'Wysyłki są tylko dla platform typu Amazon (FBA)',
-      );
-    } finally {
-      await deleteCatalog(api, other);
-    }
+    const response = await shipmentsApi.create({
+      platformId: platform.id,
+      name: testData.shipmentName(),
+      date: today(),
+      boxes: [{ items: [{ packageId: pkg.id, packageCount: 1 }] }],
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toHaveProperty(
+      'message',
+      'Wysyłki są tylko dla platform typu Amazon (FBA)',
+    );
   });
 });
