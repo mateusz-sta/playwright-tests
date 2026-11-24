@@ -1,46 +1,19 @@
-import { TodosApi } from '../../api/TodosApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import { Package, ResolveSkusResult, Todo } from '../../api/types';
+import { ResolveSkusResult, Todo } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-} from '../../test-data/catalog';
-import { TEST_PREFIX, today, uniqueId } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
+import { MISSING_ID, today } from '../../test-data/factories';
 
-let api: APIRequestContext;
-let todos: TodosApi;
-// Amazon platform, package with ASIN B0C1234567 / FNSKU X001ABC123
-let catalog: Catalog;
-let pkg: Package;
-const createdTodoIds: number[] = [];
-
+// Amazon packages from testData have ASIN B0C1234567 / FNSKU X001ABC123.
+// Notes from testData have two open items: the package and a SKU without a package.
 test.describe('API: to-do notes', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    todos = new TodosApi(api);
-    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
-    pkg = catalog.pkg as Package;
-  });
-
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    for (const id of createdTodoIds) {
-      await deleteIgnoringMissing(await todos.delete(id));
-    }
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
   test.describe('POST /api/todos/resolve-skus', () => {
-    test('maps SKUs to packages, keeps the order and reports unknown and repeated ones', async () => {
-      const response = await todos.resolveSkus({
-        platformId: catalog.platform.id,
+    test('maps SKUs to packages, keeps the order and reports unknown and repeated ones', async ({
+      testData,
+      todosApi,
+    }) => {
+      const { platform, pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+      const response = await todosApi.resolveSkus({
+        platformId: platform.id,
         skus: [pkg.sku, '   ', 'PW-TEST-UNKNOWN', pkg.sku],
       });
 
@@ -62,9 +35,9 @@ test.describe('API: to-do notes', () => {
       });
     });
 
-    test('rejects a missing platform', async () => {
-      const response = await todos.resolveSkus({
-        platformId: 999_999_999,
+    test('rejects a missing platform', async ({ todosApi }) => {
+      const response = await todosApi.resolveSkus({
+        platformId: MISSING_ID,
         skus: ['ANY'],
       });
 
@@ -73,14 +46,13 @@ test.describe('API: to-do notes', () => {
   });
 
   test.describe('note lifecycle', () => {
-    test.describe.configure({ mode: 'serial' });
+    test('POST /api/todos creates a general note without packages', async ({
+      testData,
+      todosApi,
+    }) => {
+      const title = testData.todoTitle();
 
-    let note: Todo;
-
-    test('POST /api/todos creates a general note without packages', async () => {
-      const title = `${TEST_PREFIX} note ${uniqueId()}`;
-
-      const response = await todos.create({
+      const response = await todosApi.create({
         title,
         content: 'Created by API tests',
         date: today(),
@@ -88,16 +60,20 @@ test.describe('API: to-do notes', () => {
 
       expect(response.status()).toBe(201);
       const body: Todo = await response.json();
-      createdTodoIds.push(body.id);
       expect(body).toMatchSchema('TodoDto');
       expect(body).toMatchObject({ title, done: false, items: [] });
     });
 
-    test('POST /api/todos links known SKUs to packages and keeps unknown ones as text', async () => {
-      const response = await todos.create({
-        title: `${TEST_PREFIX} note ${uniqueId()}`,
+    test('POST /api/todos links known SKUs to packages and keeps unknown ones as text', async ({
+      testData,
+      todosApi,
+    }) => {
+      const { platform, pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+      const response = await todosApi.create({
+        title: testData.todoTitle(),
         date: today(),
-        platformId: catalog.platform.id,
+        platformId: platform.id,
         items: [
           { sku: pkg.sku, content: 'new parent' },
           { sku: 'PW-TEST-NO-PACKAGE', asin: 'B0MANUAL01' },
@@ -105,10 +81,9 @@ test.describe('API: to-do notes', () => {
       });
 
       expect(response.status()).toBe(201);
-      note = await response.json();
-      createdTodoIds.push(note.id);
+      const note: Todo = await response.json();
       expect(note).toMatchSchema('TodoDto');
-      expect(note.platformName).toBe(catalog.platform.name);
+      expect(note.platformName).toBe(platform.name);
       expect(note.items).toEqual([
         {
           id: expect.any(Number),
@@ -131,8 +106,15 @@ test.describe('API: to-do notes', () => {
       ]);
     });
 
-    test('PATCH /api/todos/{id}/items/{itemId} checks one item', async () => {
-      const response = await todos.updateItem(note.id, note.items[0].id, {
+    test('PATCH /api/todos/{id}/items/{itemId} checks one item', async ({
+      testData,
+      todosApi,
+    }) => {
+      const note = await testData.todo(
+        await testData.catalog({ kind: 'AMAZON' }),
+      );
+
+      const response = await todosApi.updateItem(note.id, note.items[0].id, {
         done: true,
         content: 'checked',
       });
@@ -145,8 +127,15 @@ test.describe('API: to-do notes', () => {
       expect(body.done).toBe(false);
     });
 
-    test('PATCH /api/todos/{id}/items checks all items and the note becomes done', async () => {
-      const response = await todos.updateItems(note.id, {
+    test('PATCH /api/todos/{id}/items checks all items and the note becomes done', async ({
+      testData,
+      todosApi,
+    }) => {
+      const note = await testData.todo(
+        await testData.catalog({ kind: 'AMAZON' }),
+      );
+
+      const response = await todosApi.updateItems(note.id, {
         itemIds: note.items.map((i) => i.id),
         done: true,
       });
@@ -154,21 +143,32 @@ test.describe('API: to-do notes', () => {
       expect(response.status()).toBe(200);
       const body: Todo = await response.json();
       expect(body).toMatchSchema('TodoDto');
-      expect(body.items.every((i) => i.done)).toBe(true);
+      expect(body.items.map((i) => i.done)).toEqual([true, true]);
       expect(body.done).toBe(true);
     });
 
-    test('GET /api/todos/{id} returns the saved note', async () => {
-      const response = await todos.get(note.id);
+    test('GET /api/todos/{id} returns the saved note', async ({
+      testData,
+      todosApi,
+    }) => {
+      const note = await testData.todo(
+        await testData.catalog({ kind: 'AMAZON' }),
+      );
+
+      const response = await todosApi.get(note.id);
 
       expect(response.status()).toBe(200);
       const body: Todo = await response.json();
       expect(body).toMatchSchema('TodoDto');
-      expect(body.done).toBe(true);
+      expect(body).toEqual(note);
     });
 
-    test('GET /api/todos lists the note', async () => {
-      const response = await todos.list();
+    test('GET /api/todos lists the note', async ({ testData, todosApi }) => {
+      const note = await testData.todo(
+        await testData.catalog({ kind: 'AMAZON' }),
+      );
+
+      const response = await todosApi.list();
 
       expect(response.status()).toBe(200);
       const body: Todo[] = await response.json();
@@ -176,12 +176,22 @@ test.describe('API: to-do notes', () => {
       expect(body.map((t) => t.id)).toContain(note.id);
     });
 
-    test('PUT /api/todos/{id} replaces items with new, unchecked ones', async () => {
-      const title = `${TEST_PREFIX} renamed ${uniqueId()}`;
+    test('PUT /api/todos/{id} replaces items with new, unchecked ones', async ({
+      testData,
+      todosApi,
+    }) => {
+      const catalog = await testData.catalog({ kind: 'AMAZON' });
+      const note = await testData.todo(catalog);
+      const checked = await todosApi.updateItems(note.id, {
+        itemIds: note.items.map((i) => i.id),
+        done: true,
+      });
+      expect(checked.status()).toBe(200);
+      const title = testData.todoTitle();
 
-      const response = await todos.replace(note.id, {
+      const response = await todosApi.replace(note.id, {
         title,
-        items: [{ sku: pkg.sku }],
+        items: [{ sku: catalog.pkg.sku }],
       });
 
       expect(response.status()).toBe(200);
@@ -194,18 +204,30 @@ test.describe('API: to-do notes', () => {
       expect(body.done).toBe(false);
     });
 
-    test('DELETE /api/todos/{id} deletes the note', async () => {
-      const response = await todos.delete(note.id);
+    test('DELETE /api/todos/{id} deletes the note', async ({
+      testData,
+      todosApi,
+    }) => {
+      const note = await testData.todo(
+        await testData.catalog({ kind: 'AMAZON' }),
+      );
+
+      const response = await todosApi.delete(note.id);
 
       expect(response.status()).toBe(204);
-      expect((await todos.get(note.id)).status()).toBe(404);
+      expect((await todosApi.get(note.id)).status()).toBe(404);
     });
   });
 
   test.describe('validation', () => {
-    test('a note with packages needs a platform', async () => {
-      const response = await todos.create({
-        title: `${TEST_PREFIX} invalid`,
+    test('a note with packages needs a platform', async ({
+      testData,
+      todosApi,
+    }) => {
+      const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+      const response = await todosApi.create({
+        title: testData.todoTitle(),
         date: today(),
         items: [{ sku: pkg.sku }],
       });
@@ -213,8 +235,8 @@ test.describe('API: to-do notes', () => {
       expect(response.status()).toBe(400);
     });
 
-    test('a note needs a title', async () => {
-      const response = await todos.create({ title: '', date: today() });
+    test('a note needs a title', async ({ todosApi }) => {
+      const response = await todosApi.create({ title: '', date: today() });
 
       expect(response.status()).toBe(400);
     });

@@ -1,73 +1,46 @@
 import { PackingListsApi } from '../../api/PackingListsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
 import {
-  Package,
   PackingList,
   PackingListSummary,
+  Product,
   ProductReservation,
 } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-} from '../../test-data/catalog';
-import { TEST_PREFIX, today, uniqueId } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
-
-let api: APIRequestContext;
-let packingLists: PackingListsApi;
-let catalog: Catalog;
-let pkg: Package;
-let list: PackingList;
+import { today } from '../../test-data/factories';
 
 async function reservationFor(
-  productId: number,
+  packingListsApi: PackingListsApi,
+  product: Product,
 ): Promise<ProductReservation | undefined> {
   const body: ProductReservation[] = await (
-    await packingLists.reservations()
+    await packingListsApi.reservations()
   ).json();
   expect(body).toMatchSchema('ProductReservationDto[]');
-  return body.find((r) => r.productId === productId);
+  return body.find((r) => r.productId === product.id);
 }
 
-test.describe.configure({ mode: 'serial' });
-
+// Packages from testData have 100 pcs.
+// Packing lists and shipments exist only for Amazon platforms.
 test.describe('API: packing lists', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    packingLists = new PackingListsApi(api);
-    // Package = 100 pcs of the product.
-    // Packing lists and shipments exist only for Amazon platforms.
-    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
-    pkg = catalog.pkg as Package;
-  });
+  test('POST /api/packing-lists creates a list', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { platform, pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const name = testData.name('list');
 
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    if (list) await deleteIgnoringMissing(await packingLists.delete(list.id));
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('POST /api/packing-lists creates a list', async () => {
-    const name = `${TEST_PREFIX} list ${uniqueId()}`;
-
-    const response = await packingLists.create({
-      platformId: catalog.platform.id,
+    const response = await packingListsApi.create({
+      platformId: platform.id,
       name,
       date: today(),
       items: [{ packageId: pkg.id, packageCount: 2 }],
     });
 
     expect(response.status()).toBe(201);
-    list = await response.json();
+    const list: PackingList = await response.json();
     expect(list).toMatchSchema('PackingListDto');
     expect(list).toMatchObject({
-      platformId: catalog.platform.id,
+      platformId: platform.id,
       name,
       itemCount: 1,
       doneCount: 0,
@@ -85,15 +58,27 @@ test.describe('API: packing lists', () => {
     });
   });
 
-  test('GET /api/packing-lists/reservations counts units of items in progress', async () => {
-    expect(await reservationFor(catalog.product.id)).toEqual({
-      productId: catalog.product.id,
+  test('GET /api/packing-lists/reservations counts units of items in progress', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog({ kind: 'AMAZON' });
+    await testData.packingList(pkg, 2);
+
+    expect(await reservationFor(packingListsApi, product)).toEqual({
+      productId: product.id,
       units: 200,
     });
   });
 
-  test('PATCH /api/packing-lists/{id}/items/{itemId} marks an item as done', async () => {
-    const response = await packingLists.updateItemStatus(
+  test('PATCH /api/packing-lists/{id}/items/{itemId} marks an item as done', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const list = await testData.packingList(pkg, 2);
+
+    const response = await packingListsApi.updateItemStatus(
       list.id,
       list.items[0].id,
       { status: 'DONE' },
@@ -105,22 +90,39 @@ test.describe('API: packing lists', () => {
     expect(body.doneCount).toBe(1);
     expect(body.items[0].status).toBe('DONE');
     // Done items are no longer reserved.
-    expect(await reservationFor(catalog.product.id)).toBeUndefined();
+    expect(await reservationFor(packingListsApi, product)).toBeUndefined();
   });
 
-  test('PATCH /api/packing-lists/{id}/items changes many items at once', async () => {
-    const response = await packingLists.updateItemsStatus(list.id, {
+  test('PATCH /api/packing-lists/{id}/items changes many items at once', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { platform, product, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+    });
+    const second = await testData.package(platform, product);
+    const list = await testData.packingList([pkg, second], 2);
+
+    const response = await packingListsApi.updateItemsStatus(list.id, {
       itemIds: list.items.map((i) => i.id),
-      status: 'IN_PROGRESS',
+      status: 'DONE',
     });
 
     expect(response.status()).toBe(200);
-    expect<unknown>(await response.json()).toMatchSchema('PackingListDto');
-    await expect(response.json()).resolves.toHaveProperty('doneCount', 0);
+    const body: PackingList = await response.json();
+    expect(body).toMatchSchema('PackingListDto');
+    expect(body.doneCount).toBe(2);
+    expect(body.items.map((i) => i.status)).toEqual(['DONE', 'DONE']);
   });
 
-  test('PUT /api/packing-lists/{id} replaces items', async () => {
-    const response = await packingLists.replace(list.id, {
+  test('PUT /api/packing-lists/{id} replaces items', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const list = await testData.packingList(pkg, 2);
+
+    const response = await packingListsApi.replace(list.id, {
       note: 'Updated by API tests',
       items: [{ packageId: pkg.id, packageCount: 5 }],
     });
@@ -134,10 +136,14 @@ test.describe('API: packing lists', () => {
     });
   });
 
-  test('GET /api/packing-lists filters by platform', async () => {
-    const response = await packingLists.list({
-      platformId: catalog.platform.id,
-    });
+  test('GET /api/packing-lists filters by platform', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { platform, pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const list = await testData.packingList(pkg, 2);
+
+    const response = await packingListsApi.list({ platformId: platform.id });
 
     expect(response.status()).toBe(200);
     const body: PackingListSummary[] = await response.json();
@@ -145,39 +151,52 @@ test.describe('API: packing lists', () => {
     expect(body.map((l) => l.id)).toEqual([list.id]);
   });
 
-  test('GET /api/packing-lists/{id} returns the list', async () => {
-    const response = await packingLists.get(list.id);
+  test('GET /api/packing-lists/{id} returns the list', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const list = await testData.packingList(pkg, 2);
+
+    const response = await packingListsApi.get(list.id);
 
     expect(response.status()).toBe(200);
-    expect<unknown>(await response.json()).toMatchSchema('PackingListDto');
-    await expect(response.json()).resolves.toHaveProperty('id', list.id);
+    const body: PackingList = await response.json();
+    expect(body).toMatchSchema('PackingListDto');
+    expect(body).toEqual(list);
   });
 
-  test('DELETE /api/packing-lists/{id} deletes the list', async () => {
-    const response = await packingLists.delete(list.id);
+  test('DELETE /api/packing-lists/{id} deletes the list', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const list = await testData.packingList(pkg, 2);
+
+    const response = await packingListsApi.delete(list.id);
 
     expect(response.status()).toBe(204);
-    expect((await packingLists.get(list.id)).status()).toBe(404);
-    expect(await reservationFor(catalog.product.id)).toBeUndefined();
+    expect((await packingListsApi.get(list.id)).status()).toBe(404);
+    expect(await reservationFor(packingListsApi, product)).toBeUndefined();
   });
 
-  test('POST /api/packing-lists rejects a platform that is not Amazon', async () => {
-    const other = await createCatalog(api, { withPackage: true });
-    try {
-      const response = await packingLists.create({
-        platformId: other.platform.id,
-        name: `${TEST_PREFIX} invalid`,
-        date: today(),
-        items: [{ packageId: (other.pkg as Package).id, packageCount: 1 }],
-      });
+  test('POST /api/packing-lists rejects a platform that is not Amazon', async ({
+    packingListsApi,
+    testData,
+  }) => {
+    const { platform, pkg } = await testData.catalog({ kind: 'OTHER' });
 
-      expect(response.status()).toBe(400);
-      await expect(response.json()).resolves.toHaveProperty(
-        'message',
-        'Listy pakowania są tylko dla platform typu Amazon',
-      );
-    } finally {
-      await deleteCatalog(api, other);
-    }
+    const response = await packingListsApi.create({
+      platformId: platform.id,
+      name: testData.name('invalid'),
+      date: today(),
+      items: [{ packageId: pkg.id, packageCount: 1 }],
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toHaveProperty(
+      'message',
+      'Listy pakowania są tylko dla platform typu Amazon',
+    );
   });
 });

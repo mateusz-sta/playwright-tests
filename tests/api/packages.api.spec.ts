@@ -1,60 +1,32 @@
-import { PackagesApi } from '../../api/PackagesApi';
-import { PlatformsApi } from '../../api/PlatformsApi';
-import { ProductsApi } from '../../api/ProductsApi';
-import { createAuthorizedContext } from '../../api/apiContext';
 import { DeletePackagesResult, Package } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-} from '../../test-data/catalog';
-import { buildPackage } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
+import { MISSING_ID } from '../../test-data/factories';
 
-let api: APIRequestContext;
-let packages: PackagesApi;
-let catalog: Catalog;
-let pkg: Package;
-
-test.describe.configure({ mode: 'serial' });
-
+// Products from testData: 42.50 zł net per 1000 pcs, VAT 23%. Packages: 100 pcs.
 test.describe('API: packages', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    packages = new PackagesApi(api);
-    // Product: 42.50 zł net per 1000 pcs, VAT 23%.
-    catalog = await createCatalog(api, { withPackage: false });
-  });
-
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    if (pkg) await deleteIgnoringMissing(await packages.delete(pkg.id));
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('POST /api/packages creates a package with prices from the product', async () => {
-    const input = buildPackage(catalog.platform.id, catalog.product.id, {
+  test('POST /api/packages creates a package with prices from the product', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const platform = await testData.platform();
+    const product = await testData.product();
+    const input = testData.packageRequest(platform, product, {
       quantity: 100,
       weightG: 450,
     });
 
-    const response = await packages.create(input);
+    const response = await packagesApi.create(input);
 
     expect(response.status()).toBe(201);
-    pkg = await response.json();
+    const pkg: Package = await response.json();
     expect(pkg).toMatchSchema('PackageDto');
     expect(pkg).toMatchObject({
       name: input.name,
       sku: input.sku,
-      platformId: catalog.platform.id,
-      platformName: catalog.platform.name,
-      productId: catalog.product.id,
-      productSymbol: catalog.product.symbol,
+      platformId: platform.id,
+      platformName: platform.name,
+      productId: product.id,
+      productSymbol: product.symbol,
       quantity: 100,
       vatRate: 23,
       netPrice: 4.25,
@@ -65,17 +37,28 @@ test.describe('API: packages', () => {
     });
   });
 
-  test('POST /api/packages rejects a duplicate SKU on the same platform', async () => {
-    const response = await packages.create(
-      buildPackage(catalog.platform.id, catalog.product.id, { sku: pkg.sku }),
+  test('POST /api/packages rejects a duplicate SKU on the same platform', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { platform, product, pkg } = await testData.catalog();
+
+    const response = await packagesApi.create(
+      testData.packageRequest(platform, product, { sku: pkg.sku }),
     );
 
     expect(response.status()).toBe(409);
   });
 
-  test('POST /api/packages rejects Amazon data on a non-Amazon platform', async () => {
-    const response = await packages.create(
-      buildPackage(catalog.platform.id, catalog.product.id, {
+  test('POST /api/packages rejects Amazon data on a non-Amazon platform', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const platform = await testData.platform('OTHER');
+    const product = await testData.product();
+
+    const response = await packagesApi.create(
+      testData.packageRequest(platform, product, {
         amazon: { asin: 'B0C1234567' },
       }),
     );
@@ -83,8 +66,13 @@ test.describe('API: packages', () => {
     expect(response.status()).toBe(400);
   });
 
-  test('GET /api/packages filters by product', async () => {
-    const response = await packages.list({ productId: catalog.product.id });
+  test('GET /api/packages filters by product', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { product, pkg } = await testData.catalog();
+
+    const response = await packagesApi.list({ productId: product.id });
 
     expect(response.status()).toBe(200);
     const body: Package[] = await response.json();
@@ -92,15 +80,25 @@ test.describe('API: packages', () => {
     expect(body.map((p) => p.id)).toEqual([pkg.id]);
   });
 
-  test('GET /api/packages/{id} returns the package', async () => {
-    const response = await packages.get(pkg.id);
+  test('GET /api/packages/{id} returns the package', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog();
+
+    const response = await packagesApi.get(pkg.id);
 
     expect(response.status()).toBe(200);
     await expect(response.json()).resolves.toEqual(pkg);
   });
 
-  test('PATCH /api/packages/{id} changes quantity and recalculates prices', async () => {
-    const response = await packages.update(pkg.id, { quantity: 200 });
+  test('PATCH /api/packages/{id} changes quantity and recalculates prices', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog();
+
+    const response = await packagesApi.update(pkg.id, { quantity: 200 });
 
     expect(response.status()).toBe(200);
     expect<unknown>(await response.json()).toMatchSchema('PackageDto');
@@ -111,24 +109,35 @@ test.describe('API: packages', () => {
     });
   });
 
-  test('platform and product with packages cannot be deleted', async () => {
-    const platformDelete = await new PlatformsApi(api).delete(
-      catalog.platform.id,
-    );
-    const productDelete = await new ProductsApi(api).delete(catalog.product.id);
+  test('platform and product with packages cannot be deleted', async ({
+    platformsApi,
+    productsApi,
+    testData,
+  }) => {
+    const { platform, product } = await testData.catalog();
+
+    const platformDelete = await platformsApi.delete(platform.id);
+    const productDelete = await productsApi.delete(product.id);
 
     expect(platformDelete.status()).toBe(409);
     expect(productDelete.status()).toBe(409);
   });
 
-  test('POST /api/packages/delete deletes packages and reports missing ones', async () => {
-    const response = await packages.deleteBulk({ ids: [pkg.id, 999_999_999] });
+  test('POST /api/packages/delete deletes packages and reports missing ones', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog();
+
+    const response = await packagesApi.deleteBulk({
+      ids: [pkg.id, MISSING_ID],
+    });
 
     expect(response.status()).toBe(200);
     const body: DeletePackagesResult = await response.json();
     expect(body).toMatchSchema('DeletePackagesResultDto');
     expect(body.deleted).toEqual([pkg.id]);
-    expect(body.failed).toEqual([expect.objectContaining({ id: 999_999_999 })]);
-    expect((await packages.get(pkg.id)).status()).toBe(404);
+    expect(body.failed).toEqual([expect.objectContaining({ id: MISSING_ID })]);
+    expect((await packagesApi.get(pkg.id)).status()).toBe(404);
   });
 });

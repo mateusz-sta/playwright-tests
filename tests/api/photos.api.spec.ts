@@ -1,71 +1,61 @@
 import { PhotosApi } from '../../api/PhotosApi';
-import { createAuthorizedContext } from '../../api/apiContext';
 import { Photo, PhotoFolder, PhotoFolderDetail } from '../../api/types';
 import { expect, test } from '../../fixtures/fixtures';
-import { deleteIgnoringMissing } from '../../test-data/catalog';
-import { TEST_PREFIX, uniqueId } from '../../test-data/factories';
 import { buildPng, buildTextFile } from '../../test-data/files';
-import { getTestUser } from '../../test-data/users';
-import { requireEnv } from '../../utils/helpers';
-import { APIRequestContext } from '@playwright/test';
+import { readCreated } from '../../test-data/responses';
 
-let api: APIRequestContext;
-// Without Authorization – photo links are public.
-let anonymous: APIRequestContext;
-let photosApi: PhotosApi;
-let folder: PhotoFolder;
-let photos: Photo[];
-
-const folderName = `${TEST_PREFIX} ${uniqueId()}`;
 const files = [buildPng('first.png'), buildPng('second.png')];
 
-test.describe.configure({ mode: 'serial' });
+// Two photos in the folder: first.png and second.png.
+async function uploadPhotos(
+  photosApi: PhotosApi,
+  folder: PhotoFolder,
+): Promise<Photo[]> {
+  return readCreated<Photo[]>(
+    await photosApi.upload(folder.id, files),
+    'photos',
+  );
+}
 
+// The `request` fixture sends no Authorization – photo links are public.
 test.describe('API: photos', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    anonymous = await playwright.request.newContext({
-      baseURL: requireEnv('BASE_URL'),
-    });
-    photosApi = new PhotosApi(api);
-  });
+  test('POST /api/photo-folders creates an empty folder', async ({
+    photosApi,
+    testData,
+  }) => {
+    const name = testData.folderName();
 
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    // Deleting the folder also deletes its photos from disk.
-    if (folder)
-      await deleteIgnoringMissing(await photosApi.deleteFolder(folder.id));
-    await anonymous.dispose();
-    await api.dispose();
-  });
-
-  test('POST /api/photo-folders creates an empty folder', async () => {
-    const response = await photosApi.createFolder({ name: folderName });
+    const response = await photosApi.createFolder({ name });
 
     expect(response.status()).toBe(201);
-    folder = await response.json();
+    const folder: PhotoFolder = await response.json();
     expect(folder).toMatchSchema('PhotoFolderDto');
-    expect(folder).toMatchObject({
-      name: folderName,
-      photoCount: 0,
-      totalSize: 0,
-    });
+    expect(folder).toMatchObject({ name, photoCount: 0, totalSize: 0 });
   });
 
-  test('POST /api/photo-folders rejects a duplicate and an empty name', async () => {
-    const duplicate = await photosApi.createFolder({ name: folderName });
+  test('POST /api/photo-folders rejects a duplicate and an empty name', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+
+    const duplicate = await photosApi.createFolder({ name: folder.name });
     const empty = await photosApi.createFolder({ name: '' });
 
     expect(duplicate.status()).toBe(409);
     expect(empty.status()).toBe(400);
   });
 
-  test('POST /api/photo-folders/{id}/photos uploads images', async () => {
+  test('POST /api/photo-folders/{id}/photos uploads images', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+
     const response = await photosApi.upload(folder.id, files);
 
     expect(response.status()).toBe(201);
-    photos = await response.json();
+    const photos: Photo[] = await response.json();
     expect(photos).toMatchSchema('PhotoDto[]');
     expect(photos).toEqual([
       expect.objectContaining({
@@ -81,7 +71,12 @@ test.describe('API: photos', () => {
     ]);
   });
 
-  test('POST /api/photo-folders/{id}/photos accepts only images', async () => {
+  test('POST /api/photo-folders/{id}/photos accepts only images', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+
     const response = await photosApi.upload(folder.id, [
       buildTextFile('notes.txt'),
     ]);
@@ -89,15 +84,27 @@ test.describe('API: photos', () => {
     expect(response.status()).toBe(400);
   });
 
-  test('the photo link is public and returns the uploaded file', async () => {
-    const response = await anonymous.get(photos[0].path);
+  test('the photo link is public and returns the uploaded file', async ({
+    photosApi,
+    request,
+    testData,
+  }) => {
+    const [photo] = await uploadPhotos(photosApi, await testData.photoFolder());
+
+    const response = await request.get(photo.path);
 
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toBe('image/png');
     expect(await response.body()).toEqual(files[0].buffer);
   });
 
-  test('GET /api/photo-folders/{id} returns photos in upload order with totals', async () => {
+  test('GET /api/photo-folders/{id} returns photos in upload order with totals', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+    const photos = await uploadPhotos(photosApi, folder);
+
     const response = await photosApi.getFolder(folder.id);
 
     expect(response.status()).toBe(200);
@@ -108,7 +115,12 @@ test.describe('API: photos', () => {
     expect(body.photos.map((p) => p.id)).toEqual(photos.map((p) => p.id));
   });
 
-  test('PUT /api/photo-folders/{id}/order changes the order', async () => {
+  test('PUT /api/photo-folders/{id}/order changes the order', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+    const photos = await uploadPhotos(photosApi, folder);
     const reversed = photos.map((p) => p.id).reverse();
 
     const response = await photosApi.reorder(folder.id, { photoIds: reversed });
@@ -119,15 +131,27 @@ test.describe('API: photos', () => {
     expect(body.photos.map((p) => p.id)).toEqual(reversed);
   });
 
-  test('PUT /api/photo-folders/{id}/order needs all photos of the folder', async () => {
+  test('PUT /api/photo-folders/{id}/order needs all photos of the folder', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+    const [photo] = await uploadPhotos(photosApi, folder);
+
     const response = await photosApi.reorder(folder.id, {
-      photoIds: [photos[0].id],
+      photoIds: [photo.id],
     });
 
     expect(response.status()).toBe(400);
   });
 
-  test('GET /api/photo-folders lists the folder', async () => {
+  test('GET /api/photo-folders lists the folder', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+    await uploadPhotos(photosApi, folder);
+
     const response = await photosApi.listFolders();
 
     expect(response.status()).toBe(200);
@@ -138,17 +162,29 @@ test.describe('API: photos', () => {
     );
   });
 
-  test('DELETE /api/photos/{id} deletes a photo and its link stops working', async () => {
-    const response = await photosApi.deletePhoto(photos[0].id);
+  test('DELETE /api/photos/{id} deletes a photo and its link stops working', async ({
+    photosApi,
+    request,
+    testData,
+  }) => {
+    const [photo] = await uploadPhotos(photosApi, await testData.photoFolder());
+
+    const response = await photosApi.deletePhoto(photo.id);
 
     expect(response.status()).toBe(204);
-    expect((await anonymous.get(photos[0].path)).status()).toBe(404);
-    expect((await photosApi.deletePhoto(photos[0].id)).status()).toBe(404);
+    expect((await request.get(photo.path)).status()).toBe(404);
+    expect((await photosApi.deletePhoto(photo.id)).status()).toBe(404);
   });
 
-  test('POST /api/photos/delete deletes many photos and rejects an empty list', async () => {
+  test('POST /api/photos/delete deletes many photos and rejects an empty list', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+    const photos = await uploadPhotos(photosApi, folder);
+
     const response = await photosApi.deletePhotos({
-      photoIds: [photos[1].id],
+      photoIds: photos.map((p) => p.id),
     });
     const empty = await photosApi.deletePhotos({ photoIds: [] });
 
@@ -160,7 +196,12 @@ test.describe('API: photos', () => {
     expect(body).toMatchObject({ photoCount: 0, totalSize: 0, photos: [] });
   });
 
-  test('DELETE /api/photo-folders/{id} deletes the folder', async () => {
+  test('DELETE /api/photo-folders/{id} deletes the folder', async ({
+    photosApi,
+    testData,
+  }) => {
+    const folder = await testData.photoFolder();
+
     const response = await photosApi.deleteFolder(folder.id);
 
     expect(response.status()).toBe(204);

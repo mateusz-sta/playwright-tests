@@ -1,87 +1,58 @@
-import { PackagesApi } from '../../api/PackagesApi';
-import { createAuthorizedContext } from '../../api/apiContext';
-import { ErrorResponse, Marketplace, Package } from '../../api/types';
-import { expect, test } from '../../fixtures/fixtures';
 import {
-  Catalog,
-  createCatalog,
-  deleteCatalog,
-  deleteIgnoringMissing,
-  readCreated,
-} from '../../test-data/catalog';
-import { buildPackage } from '../../test-data/factories';
-import { getTestUser } from '../../test-data/users';
-import { APIRequestContext } from '@playwright/test';
+  ErrorResponse,
+  MarketPricingInput,
+  Marketplace,
+  Package,
+} from '../../api/types';
+import { expect, test } from '../../fixtures/fixtures';
+import { MISSING_ID } from '../../test-data/factories';
 
-let api: APIRequestContext;
-let packages: PackagesApi;
-// Amazon platform with one package
-let catalog: Catalog;
-let pkg: Package;
-const extraPackageIds: number[] = [];
-
-async function createPackage(platformId: number): Promise<Package> {
-  const created = await readCreated<Package>(
-    await packages.create(buildPackage(platformId, catalog.product.id)),
-    'package',
-  );
-  extraPackageIds.push(created.id);
-  return created;
-}
-
-test.describe.configure({ mode: 'serial' });
+const DE_AND_FR: MarketPricingInput[] = [
+  {
+    marketplace: 'DE',
+    markup: 10,
+    referralFeePercent: 15,
+    fbaFeeNet: 2.82,
+  },
+  { marketplace: 'FR', markup: 8 },
+];
 
 test.describe('API: Amazon package pricing', () => {
-  test.beforeAll(async ({ playwright }) => {
-    api = await createAuthorizedContext(playwright.request, getTestUser());
-    packages = new PackagesApi(api);
-    catalog = await createCatalog(api, { withPackage: true, kind: 'AMAZON' });
-    pkg = catalog.pkg as Package;
-  });
+  test('a new Amazon package has no prices for any market', async ({
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
 
-  test.afterAll(async () => {
-    // beforeAll failed (e.g. login) – nothing was created, nothing to clean up.
-    if (!api) return;
-    for (const id of extraPackageIds) {
-      await deleteIgnoringMissing(await packages.delete(id));
-    }
-    await deleteCatalog(api, catalog);
-    await api.dispose();
-  });
-
-  test('a new Amazon package has no prices for any market', () => {
     expect(pkg.amazon?.pricing).toEqual({ markets: [] });
   });
 
-  test('PUT /api/packages/{id}/amazon/pricing sets prices per market', async () => {
-    const response = await packages.updateAmazonPricing(pkg.id, {
-      markets: [
-        {
-          marketplace: 'DE',
-          markup: 10,
-          referralFeePercent: 15,
-          fbaFeeNet: 2.82,
-        },
-        { marketplace: 'FR', markup: 8 },
-      ],
+  test('PUT /api/packages/{id}/amazon/pricing sets prices per market', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+    const response = await packagesApi.updateAmazonPricing(pkg.id, {
+      markets: DE_AND_FR,
     });
 
     expect(response.status()).toBe(200);
     const body: Package = await response.json();
     expect(body).toMatchSchema('PackageDto');
-    expect(body.amazon?.pricing.markets).toEqual([
-      {
-        marketplace: 'DE',
-        markup: 10,
-        referralFeePercent: 15,
-        fbaFeeNet: 2.82,
-      },
-      { marketplace: 'FR', markup: 8 },
-    ]);
+    expect(body.amazon?.pricing.markets).toEqual(DE_AND_FR);
   });
 
-  test('PUT changes only sent fields; null clears a value and an empty market disappears', async () => {
-    const response = await packages.updateAmazonPricing(pkg.id, {
+  test('PUT changes only sent fields; null clears a value and an empty market disappears', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+    const before = await packagesApi.updateAmazonPricing(pkg.id, {
+      markets: DE_AND_FR,
+    });
+    expect(before.status()).toBe(200);
+
+    const response = await packagesApi.updateAmazonPricing(pkg.id, {
       markets: [
         { marketplace: 'FR', markup: null },
         {
@@ -108,14 +79,20 @@ test.describe('API: Amazon package pricing', () => {
     const body: Package = await response.json();
     expect(body.amazon?.pricing.markets).toEqual(expected);
     // Saved, not only returned
-    const saved: Package = await (await packages.get(pkg.id)).json();
+    const saved: Package = await (await packagesApi.get(pkg.id)).json();
     expect(saved.amazon?.pricing.markets).toEqual(expected);
   });
 
-  test('PUT /api/packages/amazon/pricing updates many packages at once', async () => {
-    const second = await createPackage(catalog.platform.id);
+  test('PUT /api/packages/amazon/pricing updates many packages at once', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { platform, product, pkg } = await testData.catalog({
+      kind: 'AMAZON',
+    });
+    const second = await testData.package(platform, product);
 
-    const response = await packages.updateAmazonPricingMany({
+    const response = await packagesApi.updateAmazonPricingMany({
       items: [
         { id: pkg.id, markets: [{ marketplace: 'IT', markup: 3 }] },
         { id: second.id, markets: [{ marketplace: 'IT', markup: 4 }] },
@@ -125,33 +102,37 @@ test.describe('API: Amazon package pricing', () => {
     expect(response.status()).toBe(200);
     const body: Package[] = await response.json();
     expect(body).toMatchSchema('PackageDto[]');
-    expect(
-      body.map((p) =>
-        p.amazon?.pricing.markets.find((m) => m.marketplace === 'IT'),
-      ),
-    ).toEqual([
-      { marketplace: 'IT', markup: 3 },
-      { marketplace: 'IT', markup: 4 },
+    expect(body.map((p) => p.amazon?.pricing.markets)).toEqual([
+      [{ marketplace: 'IT', markup: 3 }],
+      [{ marketplace: 'IT', markup: 4 }],
     ]);
   });
 
-  test('PUT /api/packages/amazon/pricing saves nothing when one package is missing', async () => {
-    const response = await packages.updateAmazonPricingMany({
+  test('PUT /api/packages/amazon/pricing saves nothing when one package is missing', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+    const response = await packagesApi.updateAmazonPricingMany({
       items: [
         { id: pkg.id, markets: [{ marketplace: 'ES', markup: 3 }] },
-        { id: 999_999_999, markets: [{ marketplace: 'ES', markup: 4 }] },
+        { id: MISSING_ID, markets: [{ marketplace: 'ES', markup: 4 }] },
       ],
     });
 
     expect(response.status()).toBe(404);
-    const saved: Package = await (await packages.get(pkg.id)).json();
-    expect(
-      saved.amazon?.pricing.markets.map((m) => m.marketplace),
-    ).not.toContain('ES');
+    const saved: Package = await (await packagesApi.get(pkg.id)).json();
+    expect(saved.amazon?.pricing.markets).toEqual([]);
   });
 
-  test('PUT rejects a referral fee above 99%', async () => {
-    const response = await packages.updateAmazonPricing(pkg.id, {
+  test('PUT rejects a referral fee above 99%', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+    const response = await packagesApi.updateAmazonPricing(pkg.id, {
       markets: [{ marketplace: 'DE', referralFeePercent: 150 }],
     });
 
@@ -162,8 +143,13 @@ test.describe('API: Amazon package pricing', () => {
     ]);
   });
 
-  test('PUT rejects an unknown marketplace', async () => {
-    const response = await packages.updateAmazonPricing(pkg.id, {
+  test('PUT rejects an unknown marketplace', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'AMAZON' });
+
+    const response = await packagesApi.updateAmazonPricing(pkg.id, {
       // Deliberately invalid value, not allowed by the type
       markets: [{ marketplace: 'XX' as Marketplace, markup: 1 }],
     });
@@ -171,22 +157,21 @@ test.describe('API: Amazon package pricing', () => {
     expect(response.status()).toBe(400);
   });
 
-  test('PUT is only for packages of an Amazon platform', async () => {
-    const other = await createCatalog(api, { withPackage: true });
-    try {
-      const response = await packages.updateAmazonPricing(
-        (other.pkg as Package).id,
-        { markets: [{ marketplace: 'DE', markup: 1 }] },
-      );
+  test('PUT is only for packages of an Amazon platform', async ({
+    packagesApi,
+    testData,
+  }) => {
+    const { pkg } = await testData.catalog({ kind: 'OTHER' });
 
-      expect(response.status()).toBe(400);
-    } finally {
-      await deleteCatalog(api, other);
-    }
+    const response = await packagesApi.updateAmazonPricing(pkg.id, {
+      markets: [{ marketplace: 'DE', markup: 1 }],
+    });
+
+    expect(response.status()).toBe(400);
   });
 
-  test('PUT returns 404 for a missing package', async () => {
-    const response = await packages.updateAmazonPricing(999_999_999, {
+  test('PUT returns 404 for a missing package', async ({ packagesApi }) => {
+    const response = await packagesApi.updateAmazonPricing(MISSING_ID, {
       markets: [{ marketplace: 'DE', markup: 1 }],
     });
 
