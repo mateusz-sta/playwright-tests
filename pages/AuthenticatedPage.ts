@@ -1,4 +1,5 @@
 import { Header } from '../components/Header';
+import { SESSION_STORAGE_KEY } from '../utils/constants';
 import { BasePage } from './BasePage';
 import { Page } from '@playwright/test';
 
@@ -20,13 +21,16 @@ export abstract class AuthenticatedPage extends BasePage {
   // Makes the saved session look `minutes` old (its issuedAt) before the next
   // page load – the app then extends it on the next user activity.
   async makeSessionOlder(minutes: number): Promise<void> {
-    await this.page.addInitScript((ageMs) => {
-      const raw = localStorage.getItem('magazyn.session');
-      if (!raw) return;
-      const session = JSON.parse(raw);
-      session.issuedAt = Date.now() - ageMs;
-      localStorage.setItem('magazyn.session', JSON.stringify(session));
-    }, minutes * 60_000);
+    await this.page.addInitScript(
+      ({ key, ageMs }) => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return;
+        const session = JSON.parse(raw);
+        session.issuedAt = Date.now() - ageMs;
+        localStorage.setItem(key, JSON.stringify(session));
+      },
+      { key: SESSION_STORAGE_KEY, ageMs: minutes * 60_000 },
+    );
   }
 
   // Opens the page and lets the app extend an older session first.

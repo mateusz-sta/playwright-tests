@@ -40,10 +40,11 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
   and `apiContext.ts` with helpers that create logged-in request contexts.
 - `fixtures/` – custom Playwright fixtures; import `test` and `expect` from `fixtures/fixtures.ts` in tests
   (page objects and steps; API clients and `testData` come from `apiFixtures.ts`).
-- `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`; `ui.ts` holds all values and texts
-  the UI tests expect; `TestData.ts` creates and cleans up data of one test (UI and API).
+- `test-data/` – test data, e.g. `getTestUser()` with credentials from `.env`; `ui.ts` holds values and texts of the UI tests,
+  `defaults.ts` the values of data created by `TestData`; `TestData.ts` creates and cleans up data of one test (UI and API).
 - `steps/` – multi-step UI flows built from page objects, e.g. `productSteps.addProduct()`, `documentSteps.receive()`.
-- `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables.
+- `utils/` – shared helpers, e.g. `requireEnv()` for reading required environment variables, and `appTexts.ts`
+  with app texts used by both page objects and tests (statuses, document types).
 
 ### Page Object Model conventions:
 
@@ -60,7 +61,8 @@ Installing dependencies also activates the Husky `pre-commit` hook (lint, format
 | Test data        | `testData` fixture (`test-data/TestData.ts`) | data created through the API before the test (`testData.catalog({ stock: 500 })`); everything gets a unique prefix and is deleted after the test – also what the test created in the UI |
 | Values and texts | `test-data/ui.ts`                            | prices, quantities, messages, text builders such as `pcs(250)` → `"250 szt."`                                                                                                           |
 
-UI tests contain only the scenario and the checks – no API calls, `beforeAll`/`afterAll` or literal values.
+UI tests contain only the scenario and the checks – no locators, API calls, `beforeAll`/`afterAll` or app texts.
+Literals are fine only when they describe the scenario itself (e.g. `kind: 'AMAZON'`, one line, zero stock).
 
 ### API test conventions:
 

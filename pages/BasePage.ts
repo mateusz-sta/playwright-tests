@@ -27,6 +27,13 @@ export abstract class BasePage {
       .locator('xpath=following-sibling::dd[1]');
   }
 
+  // Table row with a cell of exactly this text, e.g. a symbol or SKU.
+  protected rowWithCell(text: string): Locator {
+    return this.page.getByRole('row').filter({
+      has: this.page.getByRole('cell', { name: text, exact: true }),
+    });
+  }
+
   // The app confirms deletes with the browser's native confirm() dialog.
   protected async clickAndConfirm(
     button: Locator,

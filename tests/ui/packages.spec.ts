@@ -1,5 +1,12 @@
 import { test } from '../../fixtures/fixtures';
-import { AMAZON_PACKAGE, pak } from '../../test-data/ui';
+import {
+  AMAZON_PACKAGE,
+  AVAILABLE_PACKAGES,
+  grams,
+  pak,
+  suggestedPackageName,
+  suggestedSku,
+} from '../../test-data/ui';
 
 test.describe('Packages', () => {
   test('package form suggests name and SKU and enables the code after choosing its type', async ({
@@ -17,8 +24,8 @@ test.describe('Packages', () => {
     });
 
     await packageFormPage.expectSuggestedNameAndSku(
-      `${product.name} – ${AMAZON_PACKAGE.quantity} szt.`,
-      `${product.symbol}-${AMAZON_PACKAGE.quantity}`,
+      suggestedPackageName(product.name, AMAZON_PACKAGE.quantity),
+      suggestedSku(product.symbol, AMAZON_PACKAGE.quantity),
     );
   });
 
@@ -29,7 +36,7 @@ test.describe('Packages', () => {
   }) => {
     const platform = await testData.platform('AMAZON');
     const product = await testData.product();
-    const sku = `${product.symbol}-${AMAZON_PACKAGE.quantity}`;
+    const sku = suggestedSku(product.symbol, AMAZON_PACKAGE.quantity);
 
     await packageSteps.addPackage(platform.id, {
       product: product.symbol,
@@ -37,16 +44,16 @@ test.describe('Packages', () => {
       weightG: AMAZON_PACKAGE.weightG,
       asin: AMAZON_PACKAGE.asin,
       fnsku: AMAZON_PACKAGE.fnsku,
-      codeType: 'EAN',
-      code: AMAZON_PACKAGE.ean,
+      codeType: AMAZON_PACKAGE.codeType,
+      code: AMAZON_PACKAGE.code,
     });
     await packageSteps.searchList(platform.id, sku);
 
     await packagesListPage.expectRow(sku, [
       AMAZON_PACKAGE.asin,
       AMAZON_PACKAGE.fnsku,
-      AMAZON_PACKAGE.ean,
-      `${AMAZON_PACKAGE.weightG} g`,
+      AMAZON_PACKAGE.code,
+      grams(AMAZON_PACKAGE.weightG),
       pak(0),
     ]);
   });
@@ -58,11 +65,11 @@ test.describe('Packages', () => {
   }) => {
     const { platform, pkg } = await testData.catalog({
       kind: 'AMAZON',
-      stock: AMAZON_PACKAGE.stockForTwoPackages,
+      stock: AVAILABLE_PACKAGES.stock,
     });
 
     await packageSteps.openEditForm(platform.id, pkg.id);
 
-    await packageFormPage.expectDeleteBlocked(2);
+    await packageFormPage.expectDeleteBlocked(AVAILABLE_PACKAGES.count);
   });
 });

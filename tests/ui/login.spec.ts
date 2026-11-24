@@ -1,5 +1,9 @@
 import { test } from '../../fixtures/fixtures';
-import { MESSAGES, OLD_SESSION_MINUTES } from '../../test-data/ui';
+import {
+  MESSAGES,
+  OLD_SESSION_MINUTES,
+  WRONG_PASSWORD,
+} from '../../test-data/ui';
 import { getTestUser } from '../../test-data/users';
 
 // Logging in with valid credentials is tested once, in tests/auth.setup.ts.
@@ -12,7 +16,7 @@ test.describe('Login as a guest', () => {
   test('user sees an error for a wrong password', async ({ loginPage }) => {
     await loginPage.open();
 
-    await loginPage.login(getTestUser().username, 'wrong-password');
+    await loginPage.login(getTestUser().username, WRONG_PASSWORD);
 
     await loginPage.expectError(MESSAGES.wrongPassword);
     await loginPage.expectToBeOpened();

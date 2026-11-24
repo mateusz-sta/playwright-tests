@@ -50,9 +50,7 @@ export class PackingListFormPage extends AuthenticatedPage {
 
   // Row of a package with units needed and the product's current stock.
   async expectLine(sku: string, units: string, stock: string): Promise<void> {
-    const row = this.page
-      .getByRole('row')
-      .filter({ has: this.page.getByRole('cell', { name: sku, exact: true }) });
+    const row = this.rowWithCell(sku);
     await expect(
       row.getByRole('cell', { name: units, exact: true }),
     ).toBeVisible();

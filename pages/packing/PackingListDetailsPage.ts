@@ -1,3 +1,4 @@
+import { ITEM_STATUS, TextOf } from '../../utils/appTexts';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 import { Locator, Page, expect } from '@playwright/test';
 
@@ -6,12 +7,10 @@ export class PackingListDetailsPage extends AuthenticatedPage {
   private platformId = 0;
   private listId = 0;
   readonly heading: Locator;
-  readonly deleteButton: Locator;
 
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole('heading', { level: 1 });
-    this.deleteButton = page.getByRole('button', { name: 'Usuń', exact: true });
   }
 
   get path(): string {
@@ -31,7 +30,7 @@ export class PackingListDetailsPage extends AuthenticatedPage {
   // Status toggle of one item; its text is the current status.
   itemStatus(sku: string): Locator {
     return this.page.getByRole('button', {
-      name: `Gotowe: ${sku}`,
+      name: `${ITEM_STATUS.done}: ${sku}`,
       exact: true,
     });
   }
@@ -46,7 +45,7 @@ export class PackingListDetailsPage extends AuthenticatedPage {
 
   async expectItemStatus(
     sku: string,
-    status: 'W trakcie' | 'Gotowe',
+    status: TextOf<typeof ITEM_STATUS>,
   ): Promise<void> {
     await expect(this.itemStatus(sku)).toHaveText(status);
   }

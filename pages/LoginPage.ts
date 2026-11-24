@@ -1,4 +1,5 @@
 import { User } from '../test-data/users';
+import { SESSION_STORAGE_KEY } from '../utils/constants';
 import { BasePage } from './BasePage';
 import { Locator, Page, expect } from '@playwright/test';
 
@@ -43,11 +44,13 @@ export class LoginPage extends BasePage {
   async expectToStayLoggedOut(): Promise<void> {
     await expect
       .poll(() =>
-        this.page.evaluate(() => localStorage.getItem('magazyn.session')),
+        this.page.evaluate(
+          (key) => localStorage.getItem(key),
+          SESSION_STORAGE_KEY,
+        ),
       )
       .toBeNull();
-    await expect(this.page).toHaveURL(/\/login(\?.*)?$/);
-    await expect(this.heading).toBeVisible();
+    await this.expectToBeOpened();
   }
 
   async expectRedirectedFrom(path: string): Promise<void> {

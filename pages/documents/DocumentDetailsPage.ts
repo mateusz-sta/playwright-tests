@@ -1,15 +1,14 @@
+import { DOCUMENT_TYPE, TextOf } from '../../utils/appTexts';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 import { Locator, Page, expect } from '@playwright/test';
 
 // Receipt or issue document: /documents/{id}.
 export class DocumentDetailsPage extends AuthenticatedPage {
   private documentId = 0;
-  readonly heading: Locator;
   readonly deleteButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.heading = page.getByRole('heading', { level: 1 });
     this.deleteButton = page.getByRole('button', { name: 'Usuń dokument' });
   }
 
@@ -25,13 +24,14 @@ export class DocumentDetailsPage extends AuthenticatedPage {
   }
 
   line(code: string): Locator {
-    return this.page.getByRole('row').filter({
-      has: this.page.getByRole('cell', { name: code, exact: true }),
-    });
+    return this.rowWithCell(code);
   }
 
-  // type: "Przyjęcie" or "Wydanie"; lines: number of positions
-  async expectDocument(type: string, lines: number): Promise<void> {
+  // lines: number of positions
+  async expectDocument(
+    type: TextOf<typeof DOCUMENT_TYPE>,
+    lines: number,
+  ): Promise<void> {
     await expect(
       this.page.getByRole('main').getByText(type, { exact: true }),
     ).toBeVisible();

@@ -22,7 +22,7 @@ export class PackageSteps {
   // Opens the package list of a platform filtered by the search text.
   async searchList(platformId: number, text: string): Promise<void> {
     await this.list.forPlatform(platformId).open();
-    await this.list.search(text);
+    await this.list.searchBar.search(text);
   }
 
   async openEditForm(platformId: number, packageId: number): Promise<void> {

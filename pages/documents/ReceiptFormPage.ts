@@ -5,16 +5,12 @@ import { Locator, Page, expect } from '@playwright/test';
 // "Nowe przyjęcie" – /documents/in/new: products in, stock goes up.
 export class ReceiptFormPage extends AuthenticatedPage {
   readonly path = '/documents/in/new';
-  readonly invoiceInput: Locator;
-  readonly supplierInput: Locator;
   readonly lines: LineItemInput;
   readonly summary: Locator;
   readonly submitButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.invoiceInput = page.getByLabel('Numer faktury (opcjonalnie)');
-    this.supplierInput = page.getByLabel('Dostawca (opcjonalnie)');
     this.lines = new LineItemInput(page, 'Symbol produktu', 'Ilość', 'exact');
     // Text starts with whitespace (Angular template), hence \s*.
     this.summary = page

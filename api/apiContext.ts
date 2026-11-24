@@ -1,3 +1,4 @@
+import { SESSION_STORAGE_KEY } from '../utils/constants';
 import { requireEnv } from '../utils/helpers';
 import { AuthApi } from './AuthApi';
 import { LoginRequest } from './types';
@@ -43,14 +44,14 @@ interface StorageState {
 }
 
 // Token of the session saved by tests/auth.setup.ts – no login needed.
-// The app keeps its session in localStorage under "magazyn.session".
+// The app keeps its session in localStorage.
 export function readSavedToken(storageStatePath: string): string {
   const state = JSON.parse(
     readFileSync(storageStatePath, 'utf8'),
   ) as StorageState;
   const item = state.origins
     .flatMap((origin) => origin.localStorage)
-    .find(({ name }) => name === 'magazyn.session');
+    .find(({ name }) => name === SESSION_STORAGE_KEY);
   if (!item) {
     throw new Error(
       `No saved session in ${storageStatePath} – run the "setup" project first.`,

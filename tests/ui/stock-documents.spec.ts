@@ -4,8 +4,10 @@ import {
   issuedPackages,
   pak,
   pcs,
+  receiptHistoryEntry,
   receiptSummary,
 } from '../../test-data/ui';
+import { DOCUMENT_TYPE } from '../../utils/appTexts';
 
 test.describe('Stock documents', () => {
   test('receipt adds stock and shows in the product history; deleting it reverts the stock', async ({
@@ -17,19 +19,17 @@ test.describe('Stock documents', () => {
   }) => {
     const product = await testData.product();
 
-    await receiptFormPage.open();
-    await receiptFormPage.addProduct(product.symbol, STOCK.received);
+    await documentSteps.fillReceipt(product.symbol, STOCK.received);
     await receiptFormPage.expectSummary(receiptSummary(1, STOCK.received));
-    await receiptFormPage.submit();
+    await documentSteps.submitReceipt();
 
-    await documentDetailsPage.rememberIdFromUrl();
-    await documentDetailsPage.expectDocument('Przyjęcie', 1);
+    await documentDetailsPage.expectDocument(DOCUMENT_TYPE.receipt, 1);
     await documentDetailsPage.expectLine(product.symbol, pcs(STOCK.received));
 
     await productDetailsPage.forProduct(product.id).open();
     await productDetailsPage.expectStock(pcs(STOCK.received));
     await productDetailsPage.expectHistoryEntry(
-      `Przyjęcie +${pcs(STOCK.received)}`,
+      receiptHistoryEntry(STOCK.received),
     );
 
     await documentSteps.deleteOpenedDocument();
@@ -52,7 +52,7 @@ test.describe('Stock documents', () => {
 
     await documentSteps.issue(platform.name, pkg.sku, STOCK.packagesIssued);
 
-    await documentDetailsPage.expectDocument('Wydanie', 1);
+    await documentDetailsPage.expectDocument(DOCUMENT_TYPE.issue, 1);
     // Issue lines show the package SKU and "packages = pieces".
     await documentDetailsPage.expectLine(
       pkg.sku,

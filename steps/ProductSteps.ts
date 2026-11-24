@@ -44,6 +44,6 @@ export class ProductSteps {
   // Opens the product list filtered by the search text.
   async searchList(text: string): Promise<void> {
     await this.list.open();
-    await this.list.search(text);
+    await this.list.searchBar.search(text);
   }
 }

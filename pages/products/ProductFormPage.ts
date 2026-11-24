@@ -1,24 +1,17 @@
-import { AuthenticatedPage } from '../AuthenticatedPage';
+import { PRICE_UNIT, TextOf } from '../../utils/appTexts';
+import { ProductPage } from './ProductPage';
 import { Locator, Page, expect } from '@playwright/test';
 
 export interface ProductFormData {
   name?: string;
   symbol?: string;
   netPrice?: number;
-  priceUnit?: 'za 1000 szt.' | 'za 1 szt.';
+  priceUnit?: TextOf<typeof PRICE_UNIT>;
   vatRate?: '23%' | '8%' | '5%' | '0%';
 }
 
-// Prices calculated live under the form, e.g. { per1000Gross: '52,28 zł' }.
-export interface CalculatedPrices {
-  per1000Net: string;
-  per1000Gross: string;
-  unitNet: string;
-  unitGross: string;
-}
-
 // "Nowy produkt" (/products/new) and "Edycja produktu" (/products/{id}/edit).
-export class ProductFormPage extends AuthenticatedPage {
+export class ProductFormPage extends ProductPage {
   private productId?: number;
   readonly nameInput: Locator;
   readonly symbolInput: Locator;
@@ -79,21 +72,6 @@ export class ProductFormPage extends AuthenticatedPage {
 
   async save(): Promise<void> {
     await this.saveButton.click();
-  }
-
-  async expectCalculatedPrices(prices: CalculatedPrices): Promise<void> {
-    await expect(this.definition('Za 1000 szt. netto')).toHaveText(
-      prices.per1000Net,
-    );
-    await expect(this.definition('Za 1000 szt. brutto')).toHaveText(
-      prices.per1000Gross,
-    );
-    await expect(this.definition('Cena jedn. netto')).toHaveText(
-      prices.unitNet,
-    );
-    await expect(this.definition('Cena jedn. brutto')).toHaveText(
-      prices.unitGross,
-    );
   }
 
   async expectNetPrice(value: string): Promise<void> {

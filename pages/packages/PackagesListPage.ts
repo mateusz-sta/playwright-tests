@@ -1,3 +1,4 @@
+import { SearchBar } from '../../components/SearchBar';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 import { Locator, Page, expect } from '@playwright/test';
 
@@ -5,14 +6,12 @@ import { Locator, Page, expect } from '@playwright/test';
 export class PackagesListPage extends AuthenticatedPage {
   private platformId = 0;
   readonly heading: Locator;
-  readonly searchInput: Locator;
-  readonly resultsCount: Locator;
+  readonly searchBar: SearchBar;
 
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole('heading', { name: 'Pakiety', level: 1 });
-    this.searchInput = page.getByRole('searchbox', { name: 'Szukaj' });
-    this.resultsCount = page.getByRole('status').filter({ hasText: 'Wyniki' });
+    this.searchBar = new SearchBar(page);
   }
 
   get path(): string {
@@ -29,14 +28,8 @@ export class PackagesListPage extends AuthenticatedPage {
     await expect(this.heading).toBeVisible();
   }
 
-  async search(text: string): Promise<void> {
-    await this.searchInput.fill(text);
-  }
-
   row(sku: string): Locator {
-    return this.page
-      .getByRole('row')
-      .filter({ has: this.page.getByRole('cell', { name: sku, exact: true }) });
+    return this.rowWithCell(sku);
   }
 
   // texts expected in the row, e.g. ['B0C1234567', '2 pak.']
