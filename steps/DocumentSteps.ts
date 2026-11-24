@@ -10,10 +10,14 @@ export class DocumentSteps {
     private readonly details: DocumentDetailsPage,
   ) {}
 
-  // Fills "Nowe przyjęcie" with one product, submits and returns the document id.
-  async receive(symbol: string, quantity: number): Promise<number> {
+  // Opens "Nowe przyjęcie" and adds one product (not submitted yet).
+  async fillReceipt(symbol: string, quantity: number): Promise<void> {
     await this.receiptForm.open();
     await this.receiptForm.addProduct(symbol, quantity);
+  }
+
+  // Submits the filled receipt and returns the document id.
+  async submitReceipt(): Promise<number> {
     await this.receiptForm.submit();
     return this.details.rememberIdFromUrl();
   }

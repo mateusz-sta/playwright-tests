@@ -1,3 +1,4 @@
+import { SuggestInput } from '../../components/SuggestInput';
 import { AuthenticatedPage } from '../AuthenticatedPage';
 import { Locator, Page, expect } from '@playwright/test';
 
@@ -18,7 +19,7 @@ export interface PackageFormData {
 export class PackageFormPage extends AuthenticatedPage {
   private platformId = 0;
   private packageId?: number;
-  readonly productPicker: Locator;
+  readonly productPicker: SuggestInput;
   readonly quantityInput: Locator;
   readonly nameInput: Locator;
   readonly skuInput: Locator;
@@ -31,7 +32,10 @@ export class PackageFormPage extends AuthenticatedPage {
 
   constructor(page: Page) {
     super(page);
-    this.productPicker = page.getByRole('combobox', { name: 'Produkt' });
+    this.productPicker = new SuggestInput(
+      page,
+      page.getByRole('combobox', { name: 'Produkt' }),
+    );
     this.quantityInput = page.getByLabel('Sztuk w pakiecie');
     this.nameInput = page.getByRole('textbox', { name: 'Nazwa', exact: true });
     this.skuInput = page.getByRole('textbox', { name: 'SKU', exact: true });
@@ -74,13 +78,8 @@ export class PackageFormPage extends AuthenticatedPage {
 
   async fillForm(data: PackageFormData): Promise<void> {
     if (data.product !== undefined) {
-      await this.productPicker.fill(data.product);
-      // Suggestions are loaded from the API – wait before picking.
-      await expect(
-        this.page.getByRole('option').filter({ hasText: data.product }).first(),
-      ).toBeVisible({ timeout: 15_000 });
-      await this.productPicker.press('Enter');
-      await expect(this.productPicker).toHaveValue(
+      await this.productPicker.pick(data.product);
+      await expect(this.productPicker.input).toHaveValue(
         new RegExp(`^${data.product} – `),
       );
     }

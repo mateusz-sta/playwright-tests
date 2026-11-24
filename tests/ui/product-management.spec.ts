@@ -13,12 +13,12 @@ test.describe('Products', () => {
       symbol: testData.symbol(),
       netPrice: PRODUCT.netPrice,
     });
-    await productFormPage.expectCalculatedPrices(PRODUCT.prices);
+    await productFormPage.expectPrices(PRODUCT.prices);
 
     // Price per 1 pc is converted, calculated prices stay the same.
-    await productFormPage.fillForm({ priceUnit: 'za 1 szt.' });
+    await productFormPage.fillForm({ priceUnit: PRODUCT.otherPriceUnit });
     await productFormPage.expectNetPrice(PRODUCT.netPricePerUnit);
-    await productFormPage.expectCalculatedPrices(PRODUCT.prices);
+    await productFormPage.expectPrices(PRODUCT.prices);
   });
 
   test('user adds a product and finds it on the list', async ({
@@ -38,7 +38,7 @@ test.describe('Products', () => {
 
     await productSteps.searchList(symbol);
 
-    await productsPage.expectResults(1);
+    await productsPage.searchBar.expectResults(1);
     await productsPage.expectRow(symbol, [
       name,
       PRODUCT.prices.per1000Net,

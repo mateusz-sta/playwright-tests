@@ -26,11 +26,12 @@ import {
   StockMovement,
   Todo,
 } from '../api/types';
+import { DEFAULT_AMAZON, DEFAULT_PACKAGE, DEFAULT_PRODUCT } from './defaults';
 import { TEST_PREFIX, today, uniqueId } from './factories';
 import { deleteIgnoringMissing, readCreated, readList } from './responses';
 import { APIRequestContext } from '@playwright/test';
 
-// Platform with a product and its package (100 pcs, 450 g).
+// Platform with a product and its package (values: defaults.ts).
 export interface Catalog {
   platform: Platform;
   product: Product;
@@ -138,15 +139,13 @@ export class TestData {
 
   // ---------- Request bodies ----------
 
-  // 42.50 zł net per 1000 pcs, VAT 23%
   productRequest(
     overrides: Partial<CreateProductRequest> = {},
   ): CreateProductRequest {
     return {
       name: this.name('product'),
       symbol: this.symbol(),
-      netPricePer1000: 42.5,
-      vatRate: 23,
+      ...DEFAULT_PRODUCT,
       ...overrides,
     };
   }
@@ -157,7 +156,6 @@ export class TestData {
     return { name: this.name('platform'), kind: 'OTHER', ...overrides };
   }
 
-  // Package of 100 pcs, 450 g
   packageRequest(
     platform: Platform,
     product: Product,
@@ -168,8 +166,7 @@ export class TestData {
       productId: product.id,
       name: this.name('package'),
       sku: this.symbol(),
-      quantity: 100,
-      weightG: 450,
+      ...DEFAULT_PACKAGE,
       ...overrides,
     };
   }
@@ -201,12 +198,9 @@ export class TestData {
     );
   }
 
-  // Amazon platforms: the package also gets ASIN B0C1234567 / FNSKU X001ABC123.
+  // Amazon platforms: the package also gets ASIN and FNSKU.
   async package(platform: Platform, product: Product): Promise<Package> {
-    const amazon =
-      platform.kind === 'AMAZON'
-        ? { asin: 'B0C1234567', fnsku: 'X001ABC123' }
-        : undefined;
+    const amazon = platform.kind === 'AMAZON' ? DEFAULT_AMAZON : undefined;
     return readCreated<Package>(
       await this.packages.create(
         this.packageRequest(platform, product, { amazon }),

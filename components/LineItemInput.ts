@@ -1,3 +1,4 @@
+import { SuggestInput } from './SuggestInput';
 import { Locator, Page, expect } from '@playwright/test';
 
 // "Add item" row of document, list and shipment forms: a picker combobox + quantity.
@@ -8,7 +9,7 @@ export class LineItemInput {
   readonly picker: Locator;
   readonly quantity: Locator;
   readonly addButton: Locator;
-  private readonly options: Locator;
+  private readonly suggest: SuggestInput;
 
   constructor(
     page: Page,
@@ -25,21 +26,12 @@ export class LineItemInput {
       exact: true,
     });
     this.addButton = page.getByRole('button', { name: 'Dodaj', exact: true });
-    this.options = page.getByRole('option');
+    this.suggest = new SuggestInput(page, this.picker);
   }
 
   async add(value: string, quantity: number): Promise<void> {
     if (this.mode === 'suggest') {
-      // Suggestions come from the API. Sometimes (e.g. right after "+ Pudełko")
-      // the list does not open for the typed text – then clear and type again.
-      await expect(async () => {
-        await this.picker.fill('');
-        await this.picker.fill(value);
-        await expect(
-          this.options.filter({ hasText: value }).first(),
-        ).toBeVisible({ timeout: 5_000 });
-      }).toPass({ timeout: 30_000 });
-      await this.picker.press('Enter');
+      await this.suggest.pick(value);
       await this.quantity.fill(String(quantity));
       await this.addButton.click();
     } else {
